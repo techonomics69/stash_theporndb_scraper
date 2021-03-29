@@ -389,6 +389,9 @@ def scrapeScene(scene):
         if not scraped_data:
             scraped_data = sceneQuery(scrape_query, False)
         if not scraped_data:
+            print("No data found for: [{}]".format(scrape_query))
+            scene_data["tag_ids"].append(my_stash.getTagByName(config.unmatched_tag)['id'])
+            my_stash.updateSceneData(scene_data)
             return None
 
         if len(scraped_data) > 1 and not config.parse_with_filename:
