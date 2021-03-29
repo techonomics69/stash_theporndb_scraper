@@ -623,17 +623,10 @@ def updateSceneFromScrape(scene_data, scraped_scene, path=""):
                         config.
                         tag_ambiguous_performers  #Config says tag no parent
                     ):
-                    print(
-                        performer_name + " was not found in Stash. However, " +
-                        performer_name +
-                        " is not linked to a known (multi-site) performer at ThePornDB.  Skipping addition and tagging scene."
-                    )
-                    tag_id = my_stash.getTagByName(
-                        "ThePornDB Ambiguous Performer: " + performer_name,
-                        True)["id"]
+                    print(performer_name + " was not found in Stash. However, " + performer_name + " is not linked to a known (multi-site) performer at ThePornDB.  Skipping addition and tagging scene.")
+                    tag_id = my_stash.getTagByName("ThePornDB Ambiguous Performer: " + performer_name, True)["id"]
                     scene_data["tag_ids"].append(tag_id)
-                    if performer_name.lower() in path.lower(
-                    ):  #If the ambiguous performer is in the file name, put them in the title too.
+                    if performer_name.lower() in path.lower():  #If the ambiguous performer is in the file name, put them in the title too.
                         performer_names.append(performer_name)
 
                 # Add performer if we meet relevant requirements
@@ -681,8 +674,7 @@ def updateSceneFromScrape(scene_data, scraped_scene, path=""):
                 tag_ids_to_add.append(tag_id)
             else:
                 logging.debug("Tried to add tag \'" + tag_dict['tag'] + "\' but failed to find ID in Stash.")
-        scene_data["tag_ids"] = list(
-            set(scene_data["tag_ids"] + tag_ids_to_add))
+        scene_data["tag_ids"] = list(set(scene_data["tag_ids"] + tag_ids_to_add))
 
         logging.debug("Now updating scene with the following data:")
         logging.debug(scene_data)
@@ -745,8 +737,7 @@ class config_class:
     male_performers_in_title = False  # If True, male performers and included in the title
     clean_filename = True  #If True, will try to clean up filenames before attempting scrape. Often unnecessary, as ThePornDB already does this
     compact_studio_names = True  # If True, this will remove spaces from studio names added from ThePornDB
-    proxies = {
-    }  # Leave empty or specify proxy like this: {'http':'http://user:pass@10.10.10.10:8000','https':'https://user:pass@10.10.10.10:8000'}
+    proxies = {}  # Leave empty or specify proxy like this: {'http':'http://user:pass@10.10.10.10:8000','https':'https://user:pass@10.10.10.10:8000'}
 
     #use_oshash = False # Set to True to use oshash values to query NOT YET SUPPORTED
 
@@ -774,9 +765,7 @@ class config_class:
                 logging.error("No configuration found.  Exiting.")
                 sys.exit()
         except NameError as err:
-            logging.error(
-                "Invalid configuration.py.  Make sure you use 'True' and 'False' (capitalized)",
-                exc_info=config_class.debug_mode)
+            logging.error("Invalid configuration.py.  Make sure you use 'True' and 'False' (capitalized)", exc_info=config_class.debug_mode)
             sys.exit()
 
     def createConfig(self):
@@ -1014,29 +1003,21 @@ def main(args):
         else:
             server = 'http://' + str(config.server_ip) + ':' + str(config.server_port)
 
-        my_stash = StashInterface.stash_interface(server, config.username,
-                                                  config.password,
-                                                  config.ignore_ssl_warnings)
+        my_stash = StashInterface.stash_interface(server, config.username, config.password, config.ignore_ssl_warnings)
 
         if len(config.proxies) > 0: my_stash.setProxies(config.proxies)
 
         if config.ambiguous_tag:
             my_stash.getTagByName(config.ambiguous_tag, True)
         if config.scrape_tag:
-            scrape_tag_id = my_stash.getTagByName(config.scrape_tag,
-                                                  True)["id"]
+            scrape_tag_id = my_stash.getTagByName(config.scrape_tag, True)["id"]
         if config.unmatched_tag:
             unmatched_tag_id = my_stash.getTagByName(config.unmatched_tag,
                                                      True)["id"]
-        config.unconfirmed_alias = my_stash.getTagByName(
-            "ThePornDB Unconfirmed Alias", True)["name"]
+        config.unconfirmed_alias = my_stash.getTagByName("ThePornDB Unconfirmed Alias", True)["name"]
 
         findScenes_params = {}
-        findScenes_params['filter'] = {
-            'q': query,
-            'sort': "created_at",
-            'direction': 'DESC'
-        }
+        findScenes_params['filter'] = {'q': query, 'sort': "created_at", 'direction': 'DESC'}
         findScenes_params['scene_filter'] = {}
         if max_scenes != 0: findScenes_params['max_scenes'] = max_scenes
 
@@ -1060,14 +1041,8 @@ def main(args):
                 if tag:
                     required_tag_ids.append(tag["id"])
                 else:
-                    logging.error("Did not find tag in Stash: " + tag_name,
-                                  exc_info=config.debug_mode)
-            findScenes_params_incl['scene_filter'] = {
-                'tags': {
-                    'modifier': 'INCLUDES',
-                    'value': [*required_tag_ids]
-                }
-            }
+                    logging.error("Did not find tag in Stash: " + tag_name, exc_info=config.debug_mode)
+            findScenes_params_incl['scene_filter'] = {'tags': {'modifier': 'INCLUDES','value': [*required_tag_ids]}}
             if len(excluded_tags) > 0:
                 print("Getting Scenes With Required Tags")
             scenes_with_tags = my_stash.findScenes(**findScenes_params_incl)
