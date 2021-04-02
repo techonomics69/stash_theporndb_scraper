@@ -104,6 +104,7 @@ def createStashPerformerData(tpbd_performer):  #Creates stash-compliant data fro
 
 
 def createStashStudioData(tpbd_studio):  # Creates stash-compliant data from raw data provided by TPBD
+    global tpdb_headers
     stash_studio = {}
     if config.compact_studio_names:
         stash_studio["name"] = tpbd_studio["name"].replace(' ', '')
@@ -113,7 +114,7 @@ def createStashStudioData(tpbd_studio):  # Creates stash-compliant data from raw
     if tpbd_studio["logo"] is not None and "default.png" not in tpbd_studio["logo"]:
         time.sleep(tpdb_sleep)
         try:
-            r = requests.get(tpbd_studio["logo"], proxies=config.proxies, header= tpdb_headers, timeout=(3, 5))
+            r = requests.get(tpbd_studio["logo"], proxies=config.proxies, headers=tpdb_headers, timeout=(3, 5))
             if r.status_code >= 400:
                 logging.error('ThePornDB HTTP Error: %s' % r.status_code)
                 return stash_studio
@@ -209,6 +210,7 @@ def getPerformerImageB64(name):  #Searches Babepedia and TPBD for a performer im
 
 
 def getPerformer(name):
+    global tpdb_headers
     global tpbd_error_count
     search_url = "https://api.metadataapi.net/api/performers?q=" + urllib.parse.quote(name)
     data_url_prefix = "https://api.metadataapi.net/api/performers/"
@@ -233,6 +235,7 @@ def getPerformer(name):
 
 
 def sceneHashQuery(oshash):  # Scrapes ThePornDB based on oshash.  Returns an array of scenes as results, or None
+    global tpdb_headers
     global tpbd_error_count
     url = "https://api.metadataapi.net/api/scenes?hash=" + urllib.parse.quote(oshash)
     try:
@@ -252,6 +255,7 @@ def sceneHashQuery(oshash):  # Scrapes ThePornDB based on oshash.  Returns an ar
 
 
 def sceneQuery(query, parse_function=True):  # Scrapes ThePornDB based on query.  Returns an array of scenes as results, or None
+    global tpdb_headers
     global tpbd_error_count
     if parse_function:
         url = "https://api.metadataapi.net/api/scenes?parse=" + urllib.parse.quote(query)
@@ -683,7 +687,7 @@ def updateSceneFromScrape(scene_data, scraped_scene, path=""):
         logging.debug(scene_data)
         my_stash.updateSceneData(scene_data)
     except Exception as e:
-        logging.error("Scrape succeeded, but update failed.", exc_info=config.debug_mode)
+        logging.error("Scrape succeeded, but update failed:", exc_info=config.debug_mode)
 
 
 class config_class:
@@ -714,6 +718,9 @@ class config_class:
     set_tags = True
     set_title = True
     set_url = True
+
+    #ThePornDB API Key
+    tpdb_api_key = "" # Optional / Add your API Key here eg tbdb_api_key = "myactualapikey"
 
     #Set what content we add to Stash, if found in ThePornDB but not in Stash
     add_studio = True
@@ -809,6 +816,9 @@ set_studio = True
 set_tags = True
 set_title = True
 set_url = True
+
+#ThePornDB API Key
+tpdb_api_key = ""
 
 #Set what content we add to Stash, if found in ThePornDB but not in Stash
 add_studio = True  
@@ -989,9 +999,13 @@ def main(args):
         global excluded_tags
         global config
         global tpbd_error_count
+        global tpdb_headers
         tpbd_error_count = 0
         config.loadConfig()
         scenes = None
+        if config.tpdb_api_key != "":
+            tpdb_headers['Authorization'] = 'Bearer ' + config.tpdb_api_key
+            logging.info('API Key found for TPDB')
 
         query_args = parseArgs(args)
         if len(query_args) == 1:
