@@ -24,7 +24,7 @@ import StashInterface
 
 #Metadataapi API settings
 tpdb_sleep = 1  # time to sleep before each API req
-tpdb_ua = "ThePorndb Stash scraper by pierre-delecto"  # user agent
+tpdb_ua = "stashpy/1.0.0"  # user agent
 tpdb_headers = {
     'User-Agent': tpdb_ua,
 }
