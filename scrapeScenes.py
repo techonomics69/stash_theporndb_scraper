@@ -222,7 +222,7 @@ def getPerformer(name):
             logging.error('ThePornDB HTTP Error: %s' % result.status_code)
             return None
         if next(iter(result.json().get("data", [{}])), {}).get("id", None):
-            performer_id = result["data"][0]["id"]
+            performer_id = result.json()["data"][0]["id"]
             return requests.get(data_url_prefix + performer_id, proxies=config.proxies).json()["data"]
         else:
             return None
