@@ -149,24 +149,29 @@ class stash_interface:
                 sys.exit()
 
     def waitForIdle(self):
-        jobStatus = self.getStatus()
-        if jobStatus['status']!="Idle":  #Check that the DB is not locked
-            print("Stash is busy.  Retrying in 10 seconds.  Status:"+jobStatus['status']+"; Progress:"+'{:.0%}'.format(jobStatus['progress']))
+        jobQueue = self.getQueue()
+        if jobQueue:  #Check that the queue is empty
+            print("Stash is busy.  Retrying in 10 seconds.  Status:"+jobQueue[0]['description']+"; Progress:"+'{:.0%}'.format(jobQueue[0].get('progress', 'N/A')))
             time.sleep(10)
             self.waitForIdle()
     
-    def getStatus(self): 
+    def getQueue(self): 
         query = """
     {
-    jobStatus{
-      progress
-      status
-      message
+    jobQueue{
+        id
+        status
+        subTasks
+        description
+        progress
+        startTime
+        endTime
+        addTime
       }
     }
     """
         result = self.callGraphQL(query)
-        return result["data"]["jobStatus"]
+        return result["data"]["jobQueue"]
 
     def scan(self, useFileMetadata = False, path=False): 
         variables = {
@@ -784,19 +789,15 @@ def main(args):
         if args.scan: 
             if args.path:
                 print("Scanning {}".format(','.join(args.path)))
-                my_stash.waitForIdle()
                 my_stash.scan(path=args.path)
             else:
                 print("Scanning...")
-                my_stash.waitForIdle()
                 my_stash.scan()
         if args.generate: 
             print("Generating...")
-            my_stash.waitForIdle()
             my_stash.generate()
         if args.clean: 
             print("Cleaning...")
-            my_stash.waitForIdle()
             my_stash.clean()
         if args.auto_tag:
             print("Auto Tagging...")
@@ -808,7 +809,6 @@ def main(args):
             if 'p' in args.auto_tag: variables["input"]['performers'] = ['*']
             if 's' in args.auto_tag: variables["input"]['studios'] = ['*']
             if 't' in args.auto_tag: variables["input"]['tags'] = ['*']
-            my_stash.waitForIdle()
             my_stash.autoTag()
         if args.wait:
             my_stash.waitForIdle()
