@@ -440,6 +440,11 @@ def scrapeScene(scene):
 
         if scraped_data:
             scraped_scene = scraped_data[0]
+            try:
+                scraped_scene = requests.get('https://api.metadataapi.net/api/scenes/' + scraped_scene['id'], proxies=config.proxies, headers=tpdb_headers).json()["data"]
+            except:
+                logging.error("Exception encountered when getting scene by id '" + scraped_scene['id'], exc_info=config.debug_mode)
+                pass
             # If we got new data, update our current data with the new
             updateSceneFromScrape(scene_data, scraped_scene, scene['path'])
             print("Success")
