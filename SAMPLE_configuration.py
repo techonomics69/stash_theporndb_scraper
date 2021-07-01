@@ -1,5 +1,5 @@
 #Server configuration
-use_https = True # Set to False for HTTP
+use_https = False # Set to False for HTTP
 server_ip= "<IP_ADDRESS>"  #Don't include the '<' or '>'
 server_port = "<PORT>" #Don't include the '<' or '>'
 username="<USERNAME>" #Don't include the '<' or '>'
@@ -13,6 +13,7 @@ disambiguate_only = False # Set to True to run script only on scenes tagged due 
 verify_aliases_only = False # Set to True to scrape only scenes that were skipped due to unconfirmed aliases - set confirm_questionable_aliases to True before using
 rescrape_scenes= False # If False, script will not rescrape scenes previously scraped successfully.  Must set scrape_tag for this to work
 retry_unmatched = False # If False, script will not rescrape scenes previously unmatched.  Must set unmatched_tag for this to work
+background_size = 'full' # Which size get from API, available options: full, large, medium, small
 debug_mode = False
 
 #Set what fields we scrape
@@ -50,6 +51,8 @@ only_add_female_performers = True  #If True, only female performers are added (n
 scrape_performers_freeones = True #If True, will try to scrape newly added performers with the freeones scraper
 get_images_babepedia = True #If True, will try to grab an image from babepedia before the one from ThePornDB
 include_performers_in_title = True #If True, performers will be added at the beggining of the title
+male_performers_in_title = False # If True, male performers and included in the title
 clean_filename = True #If True, will try to clean up filenames before attempting scrape. Often unnecessary, as ThePornDB already does this
 compact_studio_names = True # If True, this will remove spaces from studio names added from ThePornDB
 proxies={} # Leave empty or specify proxy like this: {'http':'http://user:pass@10.10.10.10:8000','https':'https://user:pass@10.10.10.10:8000'}
+# use_oshash = False # Set to True to use oshash values to query NOT YET SUPPORTED

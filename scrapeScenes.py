@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import os
 import requests
 import json
@@ -111,7 +113,7 @@ def createStashStudioData(tpbd_studio):  # Creates stash-compliant data from raw
     else:
         stash_studio["name"] = tpbd_studio["name"]
     stash_studio["url"] = tpbd_studio["url"]
-    if tpbd_studio["logo"] is not None and "default.png" not in tpbd_studio["logo"]:
+    if tpbd_studio["logo"] is not None and "default" not in tpbd_studio["logo"]:
         time.sleep(tpdb_sleep)
         try:
             r = requests.get(tpbd_studio["logo"], proxies=config.proxies, headers=tpdb_headers, timeout=(3, 5))
@@ -167,7 +169,7 @@ def getTpbdImage(name):
     if len(r.json() ["data"] ) == 1:  #If we only have 1 hit
         raw_data = r.json()["data"][0]
         image_url = raw_data["image"]
-        if not "default.png" in image_url:
+        if not "default" in image_url:
             image = getJpegImage(image_url)
             return image
     return None
@@ -528,8 +530,8 @@ def updateSceneFromScrape(scene_data, scraped_scene, path=""):
         if config.set_date:
             scene_data["date"] = scraped_scene["date"]  #Add date
         if config.set_url: scene_data["url"] = scraped_scene["url"]  #Add URL
-        if config.set_cover_image and keyIsSet(scraped_scene, ["background", "small"]) and "default.png" not in scraped_scene["background"]['small']:  #Add cover_image
-            cover_image = getJpegImage(scraped_scene["background"]['small'])
+        if config.set_cover_image and keyIsSet(scraped_scene, ["background", config.background_size]) and not re.search(r'default\d\.png|default\.png', scraped_scene["background"][config.background_size]):  #Add cover_image
+            cover_image = getJpegImage(scraped_scene["background"][config.background_size])
             if cover_image:
                 image_b64 = base64.b64encode(cover_image)
                 stringbase = str(image_b64)
@@ -810,6 +812,7 @@ disambiguate_only = False # Set to True to run script only on scenes tagged due 
 verify_aliases_only = False # Set to True to scrape only scenes that were skipped due to unconfirmed aliases - set confirm_questionable_aliases to True before using
 rescrape_scenes= False # If False, script will not rescrape scenes previously scraped successfully.  Must set scrape_tag for this to work
 retry_unmatched = False # If False, script will not rescrape scenes previously unmatched.  Must set unmatched_tag for this to work
+background_size = 'full' # Which size get from API, available options: full, large, medium, small
 debug_mode = False
 
 #Set what fields we scrape
