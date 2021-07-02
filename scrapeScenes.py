@@ -714,6 +714,7 @@ class config_class:
     verify_aliases_only = False  # Set to True to scrape only scenes that were skipped due to unconfirmed aliases - set confirm_questionable_aliases to True before using
     rescrape_scenes = False  # If False, script will not rescrape scenes previously scraped successfully.  Must set scrape_tag for this to work
     retry_unmatched = False  # If False, script will not rescrape scenes previously unmatched.  Must set unmatched_tag for this to work
+    background_size = 'full' # Which size get from API, available options: full, large, medium, small
     debug_mode = False
 
     #Set what fields we scrape
