@@ -778,7 +778,7 @@ class config_class:
             logging.error("No configuration found.  Double check your configuration.py file exists.")
             create_config = input("Create configuruation.py? (yes/no):")
             if create_config == 'y' or create_config == 'Y' or create_config == 'Yes' or create_config == 'yes':
-                createConfig()
+                self.createConfig()
             else:
                 logging.error("No configuration found.  Exiting.")
                 sys.exit()
@@ -794,10 +794,9 @@ class config_class:
         if https_input == 'y' or https_input == 'Y' or https_input == 'Yes' or https_input == 'yes':
             self.use_https = True
         self.username = input("What's your Stash server's username? (Just press enter if you don't use one):")
-        self.password = input("What's your Stash server's username? (Just press enter if you don't use one):")
+        self.password = input("What's your Stash server's password? (Just press enter if you don't use one):")
 
-        f = open("configuration.py", "w")
-        f.write("""
+        server_configuration = r"""
 #Server configuration
 use_https = {4} # Set to False for HTTP
 server_ip= "{0}"
@@ -805,7 +804,9 @@ server_port = "{1}"
 username="{2}"
 password="{3}"
 ignore_ssl_warnings= True # Set to True if your Stash uses SSL w/ a self-signed cert
+""".lstrip().format(self.server_ip, self.server_port, self.username, self.password, self.use_https)
 
+        configuration = r"""
 # Configuration options
 scrape_tag= "Scraped From ThePornDB"  #Tag to be added to scraped scenes.  Set to None to disable
 unmatched_tag = "Missing From ThePornDB" #Tag to be added to scenes that aren't matched at TPDB.  Set to None to disable.
@@ -856,8 +857,9 @@ clean_filename = True #If True, will try to clean up filenames before attempting
 compact_studio_names = True # If True, this will remove spaces from studio names added from ThePornDB
 proxies={} # Leave empty or specify proxy like this: {'http':'http://user:pass@10.10.10.10:8000','https':'https://user:pass@10.10.10.10:8000'}
 # use_oshash = False # Set to True to use oshash values to query NOT YET SUPPORTED
-""".format(server_ip, server_port, username, password, use_https))
-        f.close()
+"""
+        with open("configuration.py", "w") as f:
+            f.write(server_configuration + configuration)
         print("Configuration file created.  All values are currently at defaults.  It is highly recommended that you edit the configuration.py to your liking.  Otherwise, just re-run the script to use the defaults.")
         sys.exit()
 
