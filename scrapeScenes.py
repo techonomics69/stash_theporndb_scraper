@@ -1076,14 +1076,11 @@ def main(args):
                 else:
                     logging.error("Did not find tag in Stash: " + tag_name, exc_info=config.debug_mode)
             
-            if (not config.scrape_stash_id) and config.scrape_organized: # scrape organized scenes not scenes with a stash_id
-                findScenes_params_incl['scene_filter'] = { 'tags': { 'modifier': 'INCLUDES', 'value': [*required_tag_ids] }, 'stash_id': { 'modifier': 'IS_NULL', 'value': 'none' }}
-            elif config.scrape_stash_id and (not config.scrape_organized): # scrape scenes with a stash_id not organized ones
-                findScenes_params_excl['scene_filter'] = { 'tags': { 'modifier': 'INCLUDES', 'value': [*required_tag_ids] }, 'organized': False }
-            elif (not config.scrape_stash_id) and (not config.scrape_organized): # scrape scenes that arent organized and don't have a stash_id
-                findScenes_params_incl['scene_filter'] = { 'tags': { 'modifier': 'INCLUDES', 'value': [*required_tag_ids] }, 'organized': False, 'stash_id': { 'modifier': 'IS_NULL', 'value': 'none' }}
-            else:
-                findScenes_params_incl['scene_filter'] = {'tags': {'modifier': 'INCLUDES','value': [*required_tag_ids]}}
+            findScenes_params_incl['scene_filter']['tags'] = { 'modifier': 'INCLUDES','value': [*required_tag_ids] }
+            if (not config.scrape_stash_id): # include only scenes without stash_id
+                findScenes_params_incl['scene_filter']['stash_id'] = { 'modifier': 'IS_NULL', 'value': 'none' }
+            if (not config.scrape_organized): # include only scenes that are not organized
+                findScenes_params_incl['scene_filter']['organized'] = False
             
             if len(excluded_tags) > 0:
                 print("Getting Scenes With Required Tags")
@@ -1092,7 +1089,6 @@ def main(args):
 
         #Set our filter to exclude any excluded_tags
         if len(excluded_tags) > 0:
-            print("Excluded tags")
             findScenes_params_excl = copy.deepcopy(findScenes_params)
             excluded_tag_ids = []
             for tag_name in excluded_tags:
@@ -1102,14 +1098,11 @@ def main(args):
                 else:
                     logging.error("Did not find tag in Stash: " + tag_name, exc_info=config.debug_mode)
             
-            if (not config.scrape_stash_id) and config.scrape_organized: # scrape organized scenes not scenes with a stash_id
-                findScenes_params_excl['scene_filter'] = { 'tags': { 'modifier': 'EXCLUDES', 'value': [*excluded_tag_ids] }, 'stash_id': { 'modifier': 'IS_NULL', 'value': 'none' }}
-            elif config.scrape_stash_id and (not config.scrape_organized): # scrape scenes with a stash_id not organized ones
-                findScenes_params_excl['scene_filter'] = { 'tags': { 'modifier': 'EXCLUDES', 'value': [*excluded_tag_ids] }, 'organized': False }
-            elif (not config.scrape_stash_id) and (not config.scrape_organized): # scrape scenes that arent organized and don't have a stash_id
-                findScenes_params_excl['scene_filter'] = { 'tags': { 'modifier': 'EXCLUDES', 'value': [*excluded_tag_ids] }, 'organized': False, 'stash_id': { 'modifier': 'IS_NULL', 'value': 'none' }}
-            else:
-                findScenes_params_excl['scene_filter'] = { 'tags': { 'modifier': 'EXCLUDES', 'value': [*excluded_tag_ids] }}
+            findScenes_params_excl['scene_filter']['tags'] = { 'modifier': 'EXCLUDES', 'value': [*excluded_tag_ids] }
+            if (not config.scrape_stash_id): # include only scenes without stash_id
+                findScenes_params_excl['scene_filter']['stash_id'] = { 'modifier': 'IS_NULL', 'value': 'none' }
+            if (not config.scrape_organized): # include only scenes that are not organized
+                findScenes_params_excl['scene_filter']['organized'] = False
 
             if len(required_tags) > 0:
                 print("Getting Scenes Without Excluded Tags")
@@ -1119,12 +1112,10 @@ def main(args):
         if len(excluded_tags) == 0 and len(
                 required_tags) == 0:  #If no tags are required or excluded
             findScenes_params_filtered = copy.deepcopy(findScenes_params)
-            if (not config.scrape_stash_id) and config.scrape_organized: # scrape organized scenes not scenes with a stash_id
-                findScenes_params_filtered['scene_filter'] = { 'stash_id': { 'modifier': 'IS_NULL', 'value': 'none' }}
-            elif config.scrape_stash_id and (not config.scrape_organized): # scrape scenes with a stash_id not organized ones
-                findScenes_params_filtered['scene_filter'] = { 'organized': False }
-            elif (not config.scrape_stash_id) and (not config.scrape_organized): # scrape scenes that arent organized and don't have a stash_id
-                findScenes_params_filtered['scene_filter'] = { 'organized': False, 'stash_id': { 'modifier': 'IS_NULL', 'value': 'none' }}
+            if (not config.scrape_stash_id): # include only scenes without stash_id
+                findScenes_params_filtered['scene_filter']['stash_id'] = { 'modifier': 'IS_NULL', 'value': 'none' }
+            if (not config.scrape_organized): # include only scenes that are not organized
+                findScenes_params_filtered['scene_filter']['organized'] = False
             scenes = my_stash.findScenes(**findScenes_params_filtered)
 
         if len(required_tags) > 0 and len(excluded_tags) > 0:
