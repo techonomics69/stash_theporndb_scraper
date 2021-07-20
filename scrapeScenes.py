@@ -1066,7 +1066,6 @@ def main(args):
 
         #Set our filter to require any required_tags
         if len(required_tags) > 0:
-            print("Required tags")
             findScenes_params_incl = copy.deepcopy(findScenes_params)
             required_tag_ids = []
             for tag_name in required_tags:
