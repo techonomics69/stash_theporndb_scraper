@@ -15,6 +15,8 @@ rescrape_scenes= False # If False, script will not rescrape scenes previously sc
 retry_unmatched = False # If False, script will not rescrape scenes previously unmatched.  Must set unmatched_tag for this to work
 background_size = 'full' # Which size get from API, available options: full, large, medium, small
 debug_mode = False
+scrape_organized = False # If False, script will not scrape scenes set as Organized
+scrape_stash_id = False # If False, script will not scrape scenes that have a stash_id
 
 #Set what fields we scrape
 set_details = True
@@ -27,7 +29,7 @@ set_title = True
 set_url = True
 
 #PornDB API Key
-tpdb_api_key = "" # Optional Add your API Key here eg tpdb_api_key = "myactualapikey"
+tpdb_api_key = "" # Add your API Key here eg tpdb_api_key = "myactualapikey"
 
 #Set what content we add to Stash, if found in ThePornDB but not in Stash
 add_studio = True  

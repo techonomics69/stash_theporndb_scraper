@@ -716,6 +716,8 @@ class config_class:
     retry_unmatched = False  # If False, script will not rescrape scenes previously unmatched.  Must set unmatched_tag for this to work
     background_size = 'full' # Which size get from API, available options: full, large, medium, small
     debug_mode = False
+    scrape_organized = False # If False, script will not scrape scenes set as Organized
+    scrape_stash_id = False # If False, script will not scrape scenes that have a stash_id
 
     #Set what fields we scrape
     set_details = True
@@ -728,7 +730,7 @@ class config_class:
     set_url = True
 
     #ThePornDB API Key
-    tpdb_api_key = "" # Optional / Add your API Key here eg tbdb_api_key = "myactualapikey"
+    tpdb_api_key = "" # Add your API Key here eg tbdb_api_key = "myactualapikey"
 
     #Set what content we add to Stash, if found in ThePornDB but not in Stash
     add_studio = True
@@ -816,6 +818,8 @@ rescrape_scenes= False # If False, script will not rescrape scenes previously sc
 retry_unmatched = False # If False, script will not rescrape scenes previously unmatched.  Must set unmatched_tag for this to work
 background_size = 'full' # Which size get from API, available options: full, large, medium, small
 debug_mode = False
+scrape_organized = False # If False, script will not scrape scenes set as Organized
+scrape_stash_id = False # If False, script will not scrape scenes that have a stash_id
 
 #Set what fields we scrape
 set_details = True
@@ -1017,6 +1021,9 @@ def main(args):
         if config.tpdb_api_key != "":
             tpdb_headers['Authorization'] = 'Bearer ' + config.tpdb_api_key
             logging.info('API Key found for TPDB')
+        else:
+            print("TPDB API Key not set. Exiting.")
+            return
 
         query_args = parseArgs(args)
         if len(query_args) == 1:
@@ -1070,7 +1077,13 @@ def main(args):
                     required_tag_ids.append(tag["id"])
                 else:
                     logging.error("Did not find tag in Stash: " + tag_name, exc_info=config.debug_mode)
-            findScenes_params_incl['scene_filter'] = {'tags': {'modifier': 'INCLUDES','value': [*required_tag_ids]}}
+            
+            findScenes_params_incl['scene_filter']['tags'] = { 'modifier': 'INCLUDES','value': [*required_tag_ids] }
+            if (not config.scrape_stash_id): # include only scenes without stash_id
+                findScenes_params_incl['scene_filter']['stash_id'] = { 'modifier': 'IS_NULL', 'value': 'none' }
+            if (not config.scrape_organized): # include only scenes that are not organized
+                findScenes_params_incl['scene_filter']['organized'] = False
+            
             if len(excluded_tags) > 0:
                 print("Getting Scenes With Required Tags")
             scenes_with_tags = my_stash.findScenes(**findScenes_params_incl)
@@ -1086,7 +1099,13 @@ def main(args):
                     excluded_tag_ids.append(tag["id"])
                 else:
                     logging.error("Did not find tag in Stash: " + tag_name, exc_info=config.debug_mode)
-            findScenes_params_excl['scene_filter'] = { 'tags': { 'modifier': 'EXCLUDES', 'value': [*excluded_tag_ids] }}
+            
+            findScenes_params_excl['scene_filter']['tags'] = { 'modifier': 'EXCLUDES', 'value': [*excluded_tag_ids] }
+            if (not config.scrape_stash_id): # include only scenes without stash_id
+                findScenes_params_excl['scene_filter']['stash_id'] = { 'modifier': 'IS_NULL', 'value': 'none' }
+            if (not config.scrape_organized): # include only scenes that are not organized
+                findScenes_params_excl['scene_filter']['organized'] = False
+
             if len(required_tags) > 0:
                 print("Getting Scenes Without Excluded Tags")
             scenes_without_tags = my_stash.findScenes(**findScenes_params_excl)
@@ -1094,10 +1113,21 @@ def main(args):
 
         if len(excluded_tags) == 0 and len(
                 required_tags) == 0:  #If no tags are required or excluded
-            scenes = my_stash.findScenes(**findScenes_params)
+            findScenes_params_filtered = copy.deepcopy(findScenes_params)
+            if (not config.scrape_stash_id): # include only scenes without stash_id
+                findScenes_params_filtered['scene_filter']['stash_id'] = { 'modifier': 'IS_NULL', 'value': 'none' }
+            if (not config.scrape_organized): # include only scenes that are not organized
+                findScenes_params_filtered['scene_filter']['organized'] = False
+            scenes = my_stash.findScenes(**findScenes_params_filtered)
 
         if len(required_tags) > 0 and len(excluded_tags) > 0:
             scenes = [ scene for scene in scenes_with_tags if scene in scenes_without_tags]  #Scenes that exist in both
+        
+        if (not config.scrape_organized):
+            print("Skipped Organized scenes")
+        if (not config.scrape_stash_id):
+            print("Skipped scenes with a stash_id")
+        print("Scenes to scrape", str(len(scenes)))
 
         for scene in scenes:
             scrapeScene(scene)
