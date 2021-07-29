@@ -730,7 +730,7 @@ class config_class:
     set_url = True
 
     #ThePornDB API Key
-    tpdb_api_key = "" # Optional / Add your API Key here eg tbdb_api_key = "myactualapikey"
+    tpdb_api_key = "" # Add your API Key here eg tbdb_api_key = "myactualapikey"
 
     #Set what content we add to Stash, if found in ThePornDB but not in Stash
     add_studio = True
@@ -1021,6 +1021,9 @@ def main(args):
         if config.tpdb_api_key != "":
             tpdb_headers['Authorization'] = 'Bearer ' + config.tpdb_api_key
             logging.info('API Key found for TPDB')
+        else:
+            print("TPDB API Key not set. Exiting.")
+            return
 
         query_args = parseArgs(args)
         if len(query_args) == 1:
@@ -1119,7 +1122,11 @@ def main(args):
 
         if len(required_tags) > 0 and len(excluded_tags) > 0:
             scenes = [ scene for scene in scenes_with_tags if scene in scenes_without_tags]  #Scenes that exist in both
-
+        
+        if (not config.scrape_organized):
+            print("Skipped Organized scenes")
+        if (not config.scrape_stash_id):
+            print("Skipped scenes with a stash_id")
         print("Scenes to scrape", str(len(scenes)))
 
         for scene in scenes:

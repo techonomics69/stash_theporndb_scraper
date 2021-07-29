@@ -29,7 +29,7 @@ set_title = True
 set_url = True
 
 #PornDB API Key
-tpdb_api_key = "" # Optional Add your API Key here eg tpdb_api_key = "myactualapikey"
+tpdb_api_key = "" # Add your API Key here eg tpdb_api_key = "myactualapikey"
 
 #Set what content we add to Stash, if found in ThePornDB but not in Stash
 add_studio = True  
