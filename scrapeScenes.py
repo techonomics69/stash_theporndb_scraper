@@ -1063,7 +1063,7 @@ def main(args):
         config.unconfirmed_alias = my_stash.getTagByName("ThePornDB Unconfirmed Alias", True)["name"]
 
         findScenes_params = {}
-        findScenes_params['filter'] = {'q': query, 'sort': "created_at", 'direction': 'ASC'}
+        findScenes_params['filter'] = {'q': query, 'sort': "created_at", 'direction': 'DESC'}
         findScenes_params['scene_filter'] = {}
         if max_scenes != 0: findScenes_params['max_scenes'] = max_scenes
 
