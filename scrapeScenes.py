@@ -17,8 +17,14 @@ from io import BytesIO
 from urllib.parse import quote
 from PIL import Image
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from pathlib import Path
 
 import StashInterface
+
+custom_clean_name = None
+if Path(__file__).with_name('custom.py').is_file():
+    from custom import clean_name as custom_clean_name
+
 
 ###########################################################
 #CONFIGURATION OPTIONS HAVE BEEN MOVED TO CONFIGURATION.PY#
@@ -47,6 +53,11 @@ def scrubFileName(file_name):
     clean_name = re.sub('\.', ' ', file_name)  ##replace periods
     for word in scrubbedWords:  ##delete scrubbedWords
         clean_name = re.sub(word, '', clean_name, 0, re.IGNORECASE)
+    
+    # add support for custom name cleaning
+    if custom_clean_name is not None:
+        clean_name = custom_clean_name(clean_name)
+
     clean_name = clean_name.strip()  #trim
     return clean_name
 
@@ -1052,7 +1063,7 @@ def main(args):
         config.unconfirmed_alias = my_stash.getTagByName("ThePornDB Unconfirmed Alias", True)["name"]
 
         findScenes_params = {}
-        findScenes_params['filter'] = {'q': query, 'sort': "created_at", 'direction': 'DESC'}
+        findScenes_params['filter'] = {'q': query, 'sort': "created_at", 'direction': 'ASC'}
         findScenes_params['scene_filter'] = {}
         if max_scenes != 0: findScenes_params['max_scenes'] = max_scenes
 
