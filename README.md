@@ -11,6 +11,9 @@ If a new performer/studio/tag is found that's not currently in Stash, the script
 - Download the script and install the requirements (pip install -r requirements.txt).  
 - Rename SAMPLE_configuration.py to configuration.py. 
 - Modify the configuration.py to include the URL of your Stash endpoint.  Be sure to specify http or https.  Also include your username and password, if using.  Set any configuration parameters you'd like, which are explained in the script.  
+- If you want to further reprocess the names that are passed to the porndb you can implement additional logic in the custom.py.
+  Rename SAMPLE_custom.py to custom.py.
+  Implement your logic in the function ``clean_name`` 
 
 ## Using the script
 Run the script by entering 'python scrapeScenes.py' into your terminal.  If run without parameters, the script scrapes all Stash scenes using the options from configuration.py.  Add the -h flag to see other supported command line options.
