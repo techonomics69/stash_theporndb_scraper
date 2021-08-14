@@ -280,12 +280,11 @@ def sceneQuery(query, parse_function=True):  # Scrapes ThePornDB based on query.
     # add support for custom query cleaning
     url = ''
     if custom_sceneQuery is not None:
-        url = custom_sceneQuery(query)
-    if not url:
-        if parse_function:
-            url = "https://api.metadataapi.net/api/scenes?parse=" + urllib.parse.quote(query)
-        else:
-            url = "https://api.metadataapi.net/api/scenes?q=" + urllib.parse.quote(query)
+        query = custom_sceneQuery(query)
+    if parse_function:
+        url = "https://api.metadataapi.net/api/scenes?parse=" + urllib.parse.quote(query)
+    else:
+        url = "https://api.metadataapi.net/api/scenes?q=" + urllib.parse.quote(query)
     try:
         # TPDB seems to work better with YYYY-MM-DD instead of YYYYMMDD
         url = url.replace("%20", " ")
