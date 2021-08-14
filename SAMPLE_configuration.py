@@ -56,5 +56,6 @@ include_performers_in_title = True #If True, performers will be added at the beg
 male_performers_in_title = False # If True, male performers and included in the title
 clean_filename = True #If True, will try to clean up filenames before attempting scrape. Often unnecessary, as ThePornDB already does this
 compact_studio_names = True # If True, this will remove spaces from studio names added from ThePornDB
+fail_no_date = False # If True, on a failed scrape the system will attempt to remove the date from the query and try a re-scrape
 proxies={} # Leave empty or specify proxy like this: {'http':'http://user:pass@10.10.10.10:8000','https':'https://user:pass@10.10.10.10:8000'}
 # use_oshash = False # Set to True to use oshash values to query NOT YET SUPPORTED
