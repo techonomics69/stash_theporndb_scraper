@@ -13,6 +13,7 @@ import argparse
 import traceback
 import time
 import copy
+from datetime import datetime
 from io import BytesIO
 from urllib.parse import quote
 from PIL import Image
@@ -286,6 +287,19 @@ def sceneQuery(query, parse_function=True):  # Scrapes ThePornDB based on query.
         else:
             url = "https://api.metadataapi.net/api/scenes?q=" + urllib.parse.quote(query)
     try:
+        # TPDB seems to work better with YYYY-MM-DD instead of YYYYMMDD
+        url = url.replace("%20", " ")
+        if re.search(r'(\d{8})', url):
+            date_string = re.search(r'(\d{8})', url).group(1)
+            if date_string:
+                if re.search(r'^(20[0-2])', date_string):
+                    try:
+                        date_pass = datetime.strptime(date_string,'%Y%m%d').strftime('%Y-%m-%d')
+                        url = url.replace(date_string, date_pass)
+                    except:
+                        pass
+        url = url.replace(" ", "%20")
+                    
         time.sleep(tpdb_sleep)  # sleep before every request to avoid being blocked
         result = requests.get(url, proxies=config.proxies, timeout=(3, 5), headers=tpdb_headers)
         tpbd_error_count = 0
