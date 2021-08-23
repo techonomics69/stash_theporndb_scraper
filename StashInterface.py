@@ -291,6 +291,7 @@ class stash_interface:
       {
         id
         name
+        aliases
       }
     }
     """
@@ -361,6 +362,7 @@ class stash_interface:
                     {
                         name
                         id
+                        aliases
                     }
                 }
               }
@@ -621,6 +623,11 @@ class stash_interface:
             if search_name == tag['name'].lower().replace('-', ' ').replace('(', '').replace(')', '').strip().replace(' ', ''):
                 logging.debug("Found the tag.  ID is "+tag['id'])
                 return tag
+            else:
+                for alias in tag['aliases']:
+                    if search_name == alias.lower().replace('-', ' ').replace('(', '').replace(')', '').strip().replace(' ', ''):
+                        logging.debug("Found the tag.  ID is "+tag['id'])
+                        return tag
         
         # Add the Tag to Stash
         if add_tag_if_missing:
