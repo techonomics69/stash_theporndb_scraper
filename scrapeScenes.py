@@ -13,6 +13,7 @@ import argparse
 import traceback
 import time
 import copy
+from datetime import datetime
 from io import BytesIO
 from urllib.parse import quote
 from PIL import Image
@@ -24,6 +25,10 @@ import StashInterface
 custom_clean_name = None
 if Path(__file__).with_name('custom.py').is_file():
     from custom import clean_name as custom_clean_name
+
+custom_sceneQuery = None
+if Path(__file__).with_name('custom_sceneQuery.py').is_file():
+    from custom_sceneQuery import sceneQuery as custom_sceneQuery
 
 
 ###########################################################
@@ -270,11 +275,30 @@ def sceneHashQuery(oshash):  # Scrapes ThePornDB based on oshash.  Returns an ar
 def sceneQuery(query, parse_function=True):  # Scrapes ThePornDB based on query.  Returns an array of scenes as results, or None
     global tpdb_headers
     global tpbd_error_count
+
+    
+    # add support for custom query cleaning
+    url = ''
+    if custom_sceneQuery is not None:
+        query = custom_sceneQuery(query)
     if parse_function:
         url = "https://api.metadataapi.net/api/scenes?parse=" + urllib.parse.quote(query)
     else:
         url = "https://api.metadataapi.net/api/scenes?q=" + urllib.parse.quote(query)
     try:
+        # TPDB seems to work better with YYYY-MM-DD instead of YYYYMMDD
+        url = url.replace("%20", " ")
+        if re.search(r'(\d{8})', url):
+            date_string = re.search(r'(\d{8})', url).group(1)
+            if date_string:
+                if re.search(r'^(20[0-2])', date_string):
+                    try:
+                        date_pass = datetime.strptime(date_string,'%Y%m%d').strftime('%Y-%m-%d')
+                        url = url.replace(date_string, date_pass)
+                    except:
+                        pass
+        url = url.replace(" ", "%20")
+                    
         time.sleep(tpdb_sleep)  # sleep before every request to avoid being blocked
         result = requests.get(url, proxies=config.proxies, timeout=(3, 5), headers=tpdb_headers)
         tpbd_error_count = 0
@@ -295,9 +319,10 @@ def manuallyDisambiguateResults(scraped_data):
     for index, scene in enumerate(scraped_data):
         print(index + 1, end=': ')
         if keyIsSet(scene, ['site', 'name']):
-            print(scene['site']['name'], end=" ")
-        if keyIsSet(scene, ['date']): print(scene['date'], end=" ")
-        if keyIsSet(scene, ['title']): print(scene['title'], end=" ")
+            print(scene['site']['name'] + '\t', end=" ")
+        if keyIsSet(scene, ['date']): print(scene['date'] + '\t', end=" ")
+        if keyIsSet(scene, ['title']): print(scene['title'] + '\t', end=" ")
+        if keyIsSet(scene, ['last_updated']): print("(Updated: " + scene['last_updated'] + ")", end=" ")
         print('')
     print("0: None of the above.  Skip this scene.")
 
@@ -406,10 +431,25 @@ def scrapeScene(scene):
         if not scraped_data:
             scraped_data = sceneQuery(scrape_query, False)
         if not scraped_data:
-            print("No data found for: [{}]".format(scrape_query))
-            scene_data["tag_ids"].append(my_stash.getTagByName(config.unmatched_tag)['id'])
-            my_stash.updateSceneData(scene_data)
-            return None
+            if config.fail_no_date:
+                if re.search(r'\d{2}\.\d{2}\.\d{2}', scene['path']) or re.search(r'\d{4}-\d{2}-\d{2}', scene['path']) or re.search(r' d{2} \d{2} \d{2} ', scene['path']):
+                    scene['path'] = re.sub(r'\.\d{2}\.\d{2}\.\d{2}\.',r' ',scene['path'])
+                    scene['path'] = re.sub(r' d{2} \d{2} \d{2} ',r' ',scene['path'])
+                    scene['path'] = re.sub(r'\ \d{4}-\d{2}-\d{2}\ ',r' ',scene['path'])
+                    scene['path'] = scene['path'].replace("  "," ")
+                    print("No data found, Retrying without date for: [{}]".format(scrape_query))
+                    scrapeScene(scene)
+                    return None
+                else:
+                    print("No data found for: [{}]".format(scrape_query))
+                    scene_data["tag_ids"].append(my_stash.getTagByName(config.unmatched_tag)['id'])
+                    my_stash.updateSceneData(scene_data)
+                    return None                
+            else:
+                print("No data found for: [{}]".format(scrape_query))
+                scene_data["tag_ids"].append(my_stash.getTagByName(config.unmatched_tag)['id'])
+                my_stash.updateSceneData(scene_data)
+                return None
 
         if len(scraped_data) > 1 and not config.parse_with_filename:
             #Try to add studio
@@ -700,6 +740,11 @@ def updateSceneFromScrape(scene_data, scraped_scene, path=""):
             else:
                 logging.debug("Tried to add tag \'" + tag_dict['tag'] + "\' but failed to find ID in Stash.")
         scene_data["tag_ids"] = list(set(scene_data["tag_ids"] + tag_ids_to_add))
+        
+        if config.remove_search_tag and len(required_tags)>0:
+            for remove_tag in required_tags:
+                remove_tag_stash = my_stash.getTagByName(remove_tag, add_tag_if_missing=False)
+                scene_data["tag_ids"].remove(remove_tag_stash["id"])
 
         logging.debug("Now updating scene with the following data:")
         logging.debug(scene_data)
@@ -768,6 +813,8 @@ class config_class:
     male_performers_in_title = False  # If True, male performers and included in the title
     clean_filename = True  #If True, will try to clean up filenames before attempting scrape. Often unnecessary, as ThePornDB already does this
     compact_studio_names = True  # If True, this will remove spaces from studio names added from ThePornDB
+    fail_no_date = False #If True, on a failed scrape the system will attempt to remove the date from the query and try a re-scrape
+    remove_search_tag = False # If True, this will remove tags that are used for manual scraping on a successful scrape.  BE VERY CAREFUL WITH THIS FLAG!
     proxies = {}  # Leave empty or specify proxy like this: {'http':'http://user:pass@10.10.10.10:8000','https':'https://user:pass@10.10.10.10:8000'}
 
     #use_oshash = False # Set to True to use oshash values to query NOT YET SUPPORTED
@@ -870,6 +917,8 @@ include_performers_in_title = True #If True, performers will be added at the beg
 male_performers_in_title = False # If True, male performers and included in the title
 clean_filename = True #If True, will try to clean up filenames before attempting scrape. Often unnecessary, as ThePornDB already does this
 compact_studio_names = True # If True, this will remove spaces from studio names added from ThePornDB
+fail_no_date = False #If True, on a failed scrape the system will attempt to remove the date from the query and try a re-scrape
+remove_search_tag = False # If True, this will remove tags that are used for manual scraping on a successful scrape.  BE VERY CAREFUL WITH THIS FLAG!
 proxies={} # Leave empty or specify proxy like this: {'http':'http://user:pass@10.10.10.10:8000','https':'https://user:pass@10.10.10.10:8000'}
 # use_oshash = False # Set to True to use oshash values to query NOT YET SUPPORTED
 """
@@ -928,6 +977,10 @@ def parseArgs(args):
                            default=0,
                            type=int,
                            help='maximum number of scenes to scrape')
+    my_parser.add_argument('-fnd',
+                           '--fail_no_date',
+                           action='store_true',
+                           help='retry failed match without date in query')
     my_parser.add_argument(
         '-t',
         '--tags',
@@ -937,6 +990,10 @@ def parseArgs(args):
         action='append',
         help=
         'only match scenes with these tags; repeat once for each required tag')
+    my_parser.add_argument('-rst',
+                           '--remove_search_tag',
+                           action='store_true',
+                           help='remove search tags on successful scrape (*CAREFUL WITH THIS FLAG*)')        
     my_parser.add_argument(
         '-nt',
         '--not_tags',
@@ -1002,6 +1059,10 @@ def parseArgs(args):
         required_tags.append(tag)
     for tag in parsed_args.not_tags:
         excluded_tags.append(tag)
+    if parsed_args.fail_no_date:
+        config.fail_no_date = True
+    if parsed_args.remove_search_tag:
+        config.remove_search_tag = True
     return parsed_args.query
 
 
