@@ -432,11 +432,8 @@ def scrapeScene(scene):
             scraped_data = sceneQuery(scrape_query, False)
         if not scraped_data:
             if config.fail_no_date:
-                if re.search(r'\d{2}\.\d{2}\.\d{2}', scene['path']) or re.search(r'\d{4}-\d{2}-\d{2}', scene['path']) or re.search(r' d{2} \d{2} \d{2} ', scene['path']):
-                    scene['path'] = re.sub(r'[\.\(]\d{2}\.\d{2}\.\d{2}[\.\)]',r' ',scene['path'])
-                    scene['path'] = re.sub(r'[ \(]\d{2} \d{2} \d{2}[ \)]',r' ',scene['path'])
-                    scene['path'] = re.sub(r'[ \(]\d{4}-\d{2}-\d{2}[ \)]',r' ',scene['path'])
-                    scene['path'] = re.sub(r'[ -\(\_\.]\d{2}[ -\.\_]\d{2}[ -\.\_]\d{4}[ -\)\_\.]',r' ',scene['path'])
+                if re.search(r'[ -\(\_\.]?[0-3][0-9][ -\(\_\.]?[0-1][0-9][ -\(\_\.]?((19)|(20))?{09]?\d{2}[ -\(\_\.]?', scene['path']) or re.search(r'[ -\(\_\.]?((19)|(20))?\d{2}[ -\(\_\.]?[0-1][0-9][ -\(\_\.]?[0-3][0-9][ -\(\_\.]?', scene['path']):
+                    scene['path'] = re.sub(r'[ -\(\_\.]?\d{2,4}[ -\(\_\.]?[0-1][0-9][ -\(\_\.]?\d{2,4}[ -\(\_\.]?',r' ',scene['path'])
                     scene['path'] = scene['path'].replace("  "," ")
                     print("No data found, Retrying without date for: [{}]".format(scrape_query))
                     scrapeScene(scene)
