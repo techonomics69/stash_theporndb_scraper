@@ -825,6 +825,7 @@ class config_class:
     fail_no_date = False #If True, on a failed scrape the system will attempt to remove the date from the query and try a re-scrape
     remove_search_tag = False # If True, this will remove tags that are used for manual scraping on a successful scrape.  BE VERY CAREFUL WITH THIS FLAG!
     proxies = {}  # Leave empty or specify proxy like this: {'http':'http://user:pass@10.10.10.10:8000','https':'https://user:pass@10.10.10.10:8000'}
+    path_include = False  # filepath to scrape.  This is pointing to path in the already existing Stash database entry, and isn't an import process
 
     #use_oshash = False # Set to True to use oshash values to query NOT YET SUPPORTED
 
