@@ -391,23 +391,19 @@ def getQuery(scene):
     global config
     if config.parse_with_filename:
         try:
-            if re.search(r'^[A-z]:\\', scene['path']):  #If we have Windows-like paths
-                parse_result = re.search(r'^[A-z]:\\((.+)\\)*(.+)\.(.+)$', scene['path'])
-                dirs = parse_result.group(2).split("\\")
-            else:  #Else assume Unix-like paths
-                parse_result = re.search(r'^\/((.+)\/)*(.+)\.(.+)$', scene['path'])
-                dirs = parse_result.group(2).split("/")
-            file_name = parse_result.group(3)
-        except Exception:
-            logging.error("Error when parsing scene path: " + scene['path'], exc_info=config.debug_mode)
-            return
-        if config.clean_filename:
-            file_name = scrubFileName(file_name)
+            file_path = Path(scene['path'])
+            file_name = file_path.stem
+            dirs = list(file_path.parts[1:-1])
 
-        scrape_query = file_name
-        #ADD DIRS TO QUERY
-        for x in range(min(config.dirs_in_query, len(dirs))):
-            scrape_query = dirs.pop() + " " + scrape_query
+            if config.clean_filename:
+                file_name = scrubFileName(file_name)
+
+            scrape_query = file_name
+            for x in range(min(config.dirs_in_query, len(dirs))):
+                scrape_query = dirs.pop() + ' ' + scrape_query
+        except:
+            logging.error(f"Error when parsing scene path: {scene['path']}", exc_info=config.debug_mode)
+            return
     else:
         scrape_query = scene['title']
     return '' if scrape_query is None else str(scrape_query)
