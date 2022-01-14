@@ -30,7 +30,7 @@ if Path(__file__).with_name('custom_sceneQuery.py').is_file():
 # CONFIGURATION OPTIONS HAVE BEEN MOVED TO CONFIGURATION.PY#
 ###########################################################
 
-# Metadataapi API settings
+# MetadataAPI settings
 tpdb_sleep = 1  # time to sleep before each API req
 tpdb_ua = "stashpy/1.0.0"  # user agent
 tpdb_headers = {
@@ -49,10 +49,11 @@ def lreplace(pattern, sub, string):
 
 
 def scrubFileName(file_name):
-    scrubbedWords = ['MP4-(.+?)$', ' XXX ', '1080p', '720p', 'WMV-(.+?)$', '-UNKNOWN', ' x264-(.+?)$', 'DVDRip',
-                     'WEBRIP', 'WEB', r'\[PRiVATE\]', 'HEVC', 'x265', 'PRT-xpost', '-xpost', '480p', '2160p', 'SD',
-                     'HD',
-                     '\'', '&', ' rq']
+    scrubbedWords = [
+        'MP4-(.+?)$', ' XXX ', '1080p', '720p', 'WMV-(.+?)$', '-UNKNOWN', ' x264-(.+?)$', 'DVDRip', 'WEBRIP',
+        'WEB', r'\[PRiVATE\]', 'HEVC', 'x265', 'PRT-xpost', '-xpost', '480p', '2160p', 'SD',
+        'HD', '\'', '&', ' rq'
+    ]
     clean_name = re.sub(r'\.', ' ', file_name)  # replace periods
     for word in scrubbedWords:  # delete scrubbedWords
         clean_name = re.sub(word, '', clean_name, 0, re.IGNORECASE)
@@ -64,8 +65,7 @@ def scrubFileName(file_name):
     return clean_name
 
 
-def keyIsSet(json_object,
-             fields):  # checks if field exists for json_object.  If "fields" is a list, drills down through a tree defined by the list
+def keyIsSet(json_object, fields):  # checks if field exists for json_object.  If "fields" is a list, drills down through a tree defined by the list
     if json_object:
         if isinstance(fields, list):
             for field in fields:
@@ -158,8 +158,7 @@ def getJpegImage(image_url):
             image.save(buffered, format="JPEG")
             image = buffered.getvalue()
             return image
-
-    except Exception as e:
+    except:
         logging.error("Error Getting Image at URL:" + image_url, exc_info=config.debug_mode)
 
     return None
@@ -199,7 +198,6 @@ def getPerformerImageB64(name):  # Searches Babepedia and TPBD for a performer i
             image = getBabepediaImage(name)
             if image:
                 image_b64 = base64.b64encode(image)
-                stringbase = str(image_b64)
                 return stash_b64_header + image_b64.decode(ENCODING)
 
             # Try aliases at Babepedia
@@ -208,18 +206,16 @@ def getPerformerImageB64(name):  # Searches Babepedia and TPBD for a performer i
                     image = getBabepediaImage(alias)
                     if image:
                         image_b64 = base64.b64encode(image)
-                        stringbase = str(image_b64)
                         return stash_b64_header + image_b64.decode(ENCODING)
 
         # Try thePornDB
         image = getTpbdImage(name)
         if image:
             image_b64 = base64.b64encode(image)
-            stringbase = str(image_b64)
             return stash_b64_header + image_b64.decode(ENCODING)
 
         return None
-    except Exception as e:
+    except:
         logging.error("Error Getting Performer Image", exc_info=config.debug_mode)
 
 
@@ -236,8 +232,7 @@ def getPerformer(name):
             return None
         if next(iter(result.json().get("data", [{}])), {}).get("id", None):
             performer_id = result.json()["data"][0]["id"]
-            return requests.get(data_url_prefix + performer_id, proxies=config.proxies, headers=tpdb_headers).json()[
-                "data"]
+            return requests.get(data_url_prefix + performer_id, proxies=config.proxies, headers=tpdb_headers).json()["data"]
         else:
             return None
     except ValueError:
@@ -267,12 +262,10 @@ def sceneHashQuery(oshash):  # Scrapes ThePornDB based on oshash.  Returns an ar
             sys.exit()
 
 
-def sceneQuery(query,
-               parse_function=True):  # Scrapes ThePornDB based on query.  Returns an array of scenes as results, or None
+def sceneQuery(query, parse_function=True):  # Scrapes ThePornDB based on query.  Returns an array of scenes as results, or None
     global tpdb_headers, tpbd_error_count
 
     # add support for custom query cleaning
-    url = ''
     if custom_sceneQuery is not None:
         query = custom_sceneQuery(query)
     if parse_function:
@@ -407,7 +400,7 @@ def getQuery(scene):
 
 def scrapeScene(scene):
     global my_stash, config
-    scrape_query = ''
+    scrape_query = ""
     try:
         scene_data = my_stash.createSceneUpdateData(scene)  # Start with our current data as a template
         scraped_data = None
@@ -420,45 +413,23 @@ def scrapeScene(scene):
             scraped_data = sceneQuery(scrape_query, False)
         if not scraped_data:
             if config.fail_no_date:
-                if re.search(
-                        r'[ -(_.]([012][0-9])|(31)[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?((19)|(20))?\d{2}[ -(_.]',
-                        scene['path']) or re.search(
-                    r'[ -(_.]((19)|(20))?\d{2}[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?([012][0-9])|(31)[ -(_.]',
-                    scene['path']):
-                    scene['path'] = re.sub(
-                        r'[ -(_.]([012][0-9])|(31)[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?((19)|(20))?\d{2}[ -(_.]',
-                        r' ', scene['path'])
-                    scene['path'] = re.sub(
-                        r'[ -(_.]((19)|(20))?\d{2}[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?([012][0-9])|(31)[ -(_.]',
-                        r' ', scene['path'])
+                if re.search(r'[ -(_.]([012][0-9])|(31)[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?((19)|(20))?\d{2}[ -(_.]', scene['path']) or re.search(r'[ -(_.]((19)|(20))?\d{2}[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?([012][0-9])|(31)[ -(_.]', scene['path']):
+                    scene['path'] = re.sub(r'[ -(_.]([012][0-9])|(31)[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?((19)|(20))?\d{2}[ -(_.]', r' ', scene['path'])
+                    scene['path'] = re.sub(r'[ -(_.]((19)|(20))?\d{2}[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?([012][0-9])|(31)[ -(_.]', r' ', scene['path'])
                     scene['path'] = scene['path'].replace("  ", " ")
                     print("No data found, Retrying without date for: [{}]".format(scrape_query))
                     scrapeScene(scene)
                     return None
-                if re.search(r'^([012][0-9])|(31)[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?((19)|(20))?\d{2}[ -(_.]',
-                             scene['path']) or re.search(
-                    r'^((19)|(20))?\d{2}[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?([012][0-9])|(31)[ -(_.]',
-                    scene['path']):
-                    scene['path'] = re.sub(
-                        r'[ -(_.]([012][0-9])|(31)[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?((19)|(20))?\d{2}[ -(_.]',
-                        r' ', scene['path'])
-                    scene['path'] = re.sub(
-                        r'[ -(_.]((19)|(20))?\d{2}[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?([012][0-9])|(31)[ -(_.]',
-                        r' ', scene['path'])
+                if re.search(r'^([012][0-9])|(31)[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?((19)|(20))?\d{2}[ -(_.]', scene['path']) or re.search(r'^((19)|(20))?\d{2}[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?([012][0-9])|(31)[ -(_.]', scene['path']):
+                    scene['path'] = re.sub(r'[ -(_.]([012][0-9])|(31)[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?((19)|(20))?\d{2}[ -(_.]', r' ', scene['path'])
+                    scene['path'] = re.sub(r'[ -(_.]((19)|(20))?\d{2}[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?([012][0-9])|(31)[ -(_.]', r' ', scene['path'])
                     scene['path'] = scene['path'].replace("  ", " ")
                     print("No data found, Retrying without date for: [{}]".format(scrape_query))
                     scrapeScene(scene)
                     return None
-                if re.search(r'[ -(_.]([012][0-9])|(31)[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?((19)|(20))?\d{2}$',
-                             scene['path']) or re.search(
-                    r'[ -(_.]((19)|(20))?\d{2}[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?([012][0-9])|(31)$',
-                    scene['path']):
-                    scene['path'] = re.sub(
-                        r'[ -(_.]([012][0-9])|(31)[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?((19)|(20))?\d{2}[ -(_.]',
-                        r' ', scene['path'])
-                    scene['path'] = re.sub(
-                        r'[ -(_.]((19)|(20))?\d{2}[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?([012][0-9])|(31)[ -(_.]',
-                        r' ', scene['path'])
+                if re.search(r'[ -(_.]([012][0-9])|(31)[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?((19)|(20))?\d{2}$', scene['path']) or re.search(r'[ -(_.]((19)|(20))?\d{2}[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?([012][0-9])|(31)$', scene['path']):
+                    scene['path'] = re.sub(r'[ -(_.]([012][0-9])|(31)[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?((19)|(20))?\d{2}[ -(_.]', r' ', scene['path'])
+                    scene['path'] = re.sub(r'[ -(_.]((19)|(20))?\d{2}[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?([012][0-9])|(31)[ -(_.]', r' ', scene['path'])
                     scene['path'] = scene['path'].replace("  ", " ")
                     print("No data found, Retrying without date for: [{}]".format(scrape_query))
                     scrapeScene(scene)
@@ -518,13 +489,9 @@ def scrapeScene(scene):
         if scraped_data:
             scraped_scene = scraped_data[0]
             try:
-                scraped_scene = \
-                    requests.get('https://api.metadataapi.net/api/scenes/' + scraped_scene['id'],
-                                 proxies=config.proxies,
-                                 headers=tpdb_headers).json()["data"]
+                scraped_scene = requests.get('https://api.metadataapi.net/api/scenes/' + scraped_scene['id'], proxies=config.proxies, headers=tpdb_headers).json()["data"]
             except:
-                logging.error("Exception encountered when getting scene by id '" + scraped_scene['id'],
-                              exc_info=config.debug_mode)
+                logging.error("Exception encountered when getting scene by id '" + scraped_scene['id'], exc_info=config.debug_mode)
                 pass
             # If we got new data, update our current data with the new
             updateSceneFromScrape(scene_data, scraped_scene, scene['path'])
@@ -534,19 +501,15 @@ def scrapeScene(scene):
                 my_stash.getTagByName(config.unmatched_tag)['id'])
             my_stash.updateSceneData(scene_data)
             print("No data found for: [{}]".format(scrape_query))
-    except Exception as e:
+    except:
         logging.error("Exception encountered when scraping '" + scrape_query, exc_info=config.debug_mode)
 
 
-def manConfirmAlias(scraped_performer,
-                    site):  # Returns scraped_performer if response is positive, None otherwise.  If Always or Site are selected, scraped_performer is updated to include a new alias
+def manConfirmAlias(scraped_performer, site):  # Returns scraped_performer if response is positive, None otherwise.  If Always or Site are selected, scraped_performer is updated to include a new alias
     global known_aliases, config
     if config.compact_studio_names:
         site = site.replace(' ', '')
-    response = input(
-        "Found " + scraped_performer['name'] + " as a performer in scene, which TPBD indicates is an alias of " +
-        scraped_performer['parent'][
-            'name'] + ".  Should we trust that? (Y)es / (N)o / (A)lways / Always for this (S)ite:")
+    response = input("Found " + scraped_performer['name'] + " as a performer in scene, which TPBD indicates is an alias of " + scraped_performer['parent']['name'] + ".  Should we trust that? (Y)es / (N)o / (A)lways / Always for this (S)ite:")
     if response == 'y' or response == 'Y' or response == 'Yes' or response == 'yes':
         return scraped_performer
     elif response == 'a' or response == 'A' or response == 'always' or response == 'Always':
@@ -599,15 +562,13 @@ def updateSceneFromScrape(scene_data, scraped_scene, path=""):
         if config.ambiguous_tag:
             ambiguous_tag_id = my_stash.getTagByName(config.ambiguous_tag)['id']
             if ambiguous_tag_id in scene_data["tag_ids"]:
-                scene_data["tag_ids"].remove(
-                    ambiguous_tag_id)  # Remove ambiguous tag; it will be readded later if the scene is still ambiguous
+                scene_data["tag_ids"].remove(ambiguous_tag_id)  # Remove ambiguous tag; it will be readded later if the scene is still ambiguous
         if config.unmatched_tag:
             unmatched_tag_id = my_stash.getTagByName(config.unmatched_tag)['id']
             if unmatched_tag_id in scene_data["tag_ids"]:
                 scene_data["tag_ids"].remove(unmatched_tag_id)  # Remove unmatched tag
         if my_stash.getTagByName(config.unconfirmed_alias)["id"] in scene_data["tag_ids"]:
-            scene_data["tag_ids"].remove(my_stash.getTagByName(config.unconfirmed_alias)[
-                                             "id"])  # Remove unconfirmed alias tag; it will be readded later if needed
+            scene_data["tag_ids"].remove(my_stash.getTagByName(config.unconfirmed_alias)["id"])  # Remove unconfirmed alias tag; it will be readded later if needed
 
         if config.set_details:
             scene_data["details"] = scraped_scene["description"]  # Add details
@@ -615,12 +576,10 @@ def updateSceneFromScrape(scene_data, scraped_scene, path=""):
             scene_data["date"] = scraped_scene["date"]  # Add date
         if config.set_url:
             scene_data["url"] = scraped_scene["url"]  # Add URL
-        if config.set_cover_image and keyIsSet(scraped_scene, ["background", config.background_size]) and not re.search(
-                r'default\d\.png|default\.png', scraped_scene["background"][config.background_size]):  # Add cover_image
+        if config.set_cover_image and keyIsSet(scraped_scene, ["background", config.background_size]) and not re.search(r'default\d\.png|default\.png', scraped_scene["background"][config.background_size]):  # Add cover_image
             cover_image = getJpegImage(scraped_scene["background"][config.background_size])
             if cover_image:
                 image_b64 = base64.b64encode(cover_image)
-                stringbase = str(image_b64)
                 scene_data["cover_image"] = stash_b64_header + image_b64.decode(ENCODING)
 
         # Add Studio to the scene
@@ -651,9 +610,7 @@ def updateSceneFromScrape(scene_data, scraped_scene, path=""):
             for scraped_performer in scraped_scene["performers"]:
                 not_female = False
 
-                if keyIsSet(scraped_performer, ["parent", "extras"]) and (
-                        not keyIsSet(scraped_performer, ["parent", "extras", "gender"]) or
-                        scraped_performer["parent"]["extras"]["gender"] != 'Female'):
+                if keyIsSet(scraped_performer, ["parent", "extras"]) and (not keyIsSet(scraped_performer, ["parent", "extras", "gender"]) or scraped_performer["parent"]["extras"]["gender"] != 'Female'):
                     not_female = True
 
                 if (not keyIsSet(scraped_performer, ["parent", "extras", "gender"]) and
@@ -661,8 +618,7 @@ def updateSceneFromScrape(scene_data, scraped_scene, path=""):
                         scraped_performer["extra"]["gender"] == 'Male'):
                     not_female = True
 
-                if (config.only_add_female_performers and not scraped_performer[
-                                                                  'name'].lower() in path.lower() and not_female):
+                if (config.only_add_female_performers and not scraped_performer['name'].lower() in path.lower() and not_female):
                     continue  # End current loop on male performers not in path
 
                 performer_id = None
@@ -674,14 +630,9 @@ def updateSceneFromScrape(scene_data, scraped_scene, path=""):
                     if config.male_performers_in_title or not not_female:
                         performer_names.append(performer_name)  # Add to list of performers in scene
                 elif keyIsSet(
-                        scraped_performer, ['parent',
-                                            'name']):  # If site name does not match someone in Stash and TPBD has a linked parent
+                        scraped_performer, ['parent', 'name']):  # If site name does not match someone in Stash and TPBD has a linked parent
                     if (  # Test for when we should automatically accept the parent name
-                            areAliases(scraped_performer['name'], scraped_performer['parent']['name'],
-                                       scraped_scene['site']['name'].replace(' ',
-                                                                             '') if config.compact_studio_names else
-                                       scraped_scene['site'][
-                                           'name']) or  # Parent performer seems to be a valid alias to site performer
+                            areAliases(scraped_performer['name'], scraped_performer['parent']['name'], scraped_scene['site']['name'].replace(' ', '') if config.compact_studio_names else scraped_scene['site']['name']) or  # Parent performer seems to be a valid alias to site performer
                             " " not in scraped_performer['name'] or  # Single name, so we just trust TPBD
                             config.trust_tpbd_aliases  # Flag says to just trust TPBD
                     ):
@@ -708,8 +659,7 @@ def updateSceneFromScrape(scene_data, scraped_scene, path=""):
                                     if config.male_performers_in_title or not not_female:
                                         performer_names.append(performer_name)  # Add to list of performers in scene
                                     stash_performer.update(createStashPerformerData(confirmed_performer))
-                                    my_stash.updatePerformer(
-                                        stash_performer)  # Update the performer to capture new aliases if needed
+                                    my_stash.updatePerformer(stash_performer)  # Update the performer to capture new aliases if needed
                                 else:
                                     add_this_performer = True
                         else:
@@ -729,10 +679,10 @@ def updateSceneFromScrape(scene_data, scraped_scene, path=""):
                 if (not stash_performer and  # We don't have a match so far
                         not keyIsSet(scraped_performer, ['parent', 'name'])
                         and  # No TPBD parent
-                        config.tag_ambiguous_performers  # Config says tag no parent
+                        config.
+                                tag_ambiguous_performers  # Config says tag no parent
                 ):
-                    print(
-                        performer_name + " was not found in Stash. However, " + performer_name + " is not linked to a known (multi-site) performer at ThePornDB.  Skipping addition and tagging scene.")
+                    print(performer_name + " was not found in Stash. However, " + performer_name + " is not linked to a known (multi-site) performer at ThePornDB.  Skipping addition and tagging scene.")
                     tag_id = my_stash.getTagByName("ThePornDB Ambiguous Performer: " + performer_name, True)["id"]
                     scene_data["tag_ids"].append(tag_id)
                     if performer_name.lower() in path.lower():  # If the ambiguous performer is in the file name, put them in the title too.
@@ -769,7 +719,6 @@ def updateSceneFromScrape(scene_data, scraped_scene, path=""):
 
         # Set tag_ids for tags_to_add
         for tag_dict in tags_to_add:
-            tag_id = None
             tag_name = tag_dict['tag'].replace('-', ' ').replace('(', '').replace(')', '').strip().title()
             if config.add_tags:
                 tag_id = my_stash.getTagByName(tag_name, add_tag_if_missing=True)["id"]
@@ -792,7 +741,7 @@ def updateSceneFromScrape(scene_data, scraped_scene, path=""):
         logging.debug("Now updating scene with the following data:")
         logging.debug(scene_data)
         my_stash.updateSceneData(scene_data)
-    except Exception as e:
+    except:
         logging.error("Scrape succeeded, but update failed:", exc_info=config.debug_mode)
 
 
@@ -870,8 +819,7 @@ class config_class:
                 if key[0:2] == "__":
                     continue
                 if (key == "server_ip" or key == "server_port") and ("<" in value or ">" in value):
-                    logging.warning(
-                        "Please remove '<' and '>' from your server_ip and server_port lines in configuration.py")
+                    logging.warning("Please remove '<' and '>' from your server_ip and server_port lines in configuration.py")
                     sys.exit()
                 if value is None or isinstance(
                         value, type(vars(config_class).get(key, None))):
@@ -887,9 +835,8 @@ class config_class:
             else:
                 logging.error("No configuration found.  Exiting.")
                 sys.exit()
-        except NameError as err:
-            logging.error("Invalid configuration.py.  Make sure you use 'True' and 'False' (capitalized)",
-                          exc_info=config_class.debug_mode)
+        except NameError:
+            logging.error("Invalid configuration.py.  Make sure you use 'True' and 'False' (capitalized)", exc_info=config_class.debug_mode)
             sys.exit()
 
     def createConfig(self):
@@ -970,8 +917,7 @@ proxies={} # Leave empty or specify proxy like this: {'http':'http://user:pass@1
 """
         with open("configuration.py", "w") as f:
             f.write(server_configuration + configuration)
-        print(
-            "Configuration file created.  All values are currently at defaults.  It is highly recommended that you edit the configuration.py to your liking.  Otherwise, just re-run the script to use the defaults.")
+        print("Configuration file created.  All values are currently at defaults.  It is highly recommended that you edit the configuration.py to your liking.  Otherwise, just re-run the script to use the defaults.")
         sys.exit()
 
 
@@ -1129,14 +1075,13 @@ config = config_class()
 
 
 def main(args):
-    global my_stash, max_scenes, required_tags, excluded_tags, config, tpbd_error_count, tpdb_headers
     logging.basicConfig(level=logging.DEBUG)
-    config.loadConfig()
+    global my_stash, max_scenes, required_tags, excluded_tags, config, tpbd_error_count, tpdb_headers
+    scenes_with_tags = []
+    scenes_without_tags = []
     try:
-        scenes_with_tags = []
-        scenes_without_tags = []
-
         tpbd_error_count = 0
+        config.loadConfig()
         scenes = None
         if config.tpdb_api_key != "":
             tpdb_headers['Authorization'] = 'Bearer ' + config.tpdb_api_key
@@ -1169,8 +1114,7 @@ def main(args):
         if config.scrape_tag:
             scrape_tag_id = my_stash.getTagByName(config.scrape_tag, True)["id"]
         if config.unmatched_tag:
-            unmatched_tag_id = my_stash.getTagByName(config.unmatched_tag,
-                                                     True)["id"]
+            unmatched_tag_id = my_stash.getTagByName(config.unmatched_tag, True)["id"]
         config.unconfirmed_alias = my_stash.getTagByName("ThePornDB Unconfirmed Alias", True)["name"]
 
         findScenes_params = {'filter': {'q': query, 'sort': "created_at", 'direction': 'DESC'}, 'scene_filter': {}}
@@ -1251,8 +1195,7 @@ def main(args):
             scrapeScene(scene)
 
         print("Success! Finished.")
-
-    except Exception as e:
+    except:
         logging.error("""Something went wrong.  Have you:
         • Checked to make sure you're running the "development" branch of Stash, not "latest"?
         • Checked that you can connect to Stash at the same IP and port listed in your configuration.py?

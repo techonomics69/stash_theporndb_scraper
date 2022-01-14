@@ -21,9 +21,11 @@ def lreplace(pattern, sub, string):
 
 
 def scrubFileName(file_name):
-    scrubbedWords = ['MP4-(.+?)$', ' XXX ', '1080p', '720p', 'WMV-(.+?)$', '-UNKNOWN', ' x264-(.+?)$', 'DVDRip',
-                     'WEBRIP', 'WEB', r'\[PRiVATE\]', 'HEVC', 'x265', 'PRT-xpost', '-xpost', '480p', ' SD', ' HD', '\'',
-                     '&']
+    scrubbedWords = [
+        'MP4-(.+?)$', ' XXX ', '1080p', '720p', 'WMV-(.+?)$', '-UNKNOWN', ' x264-(.+?)$', 'DVDRip', 'WEBRIP',
+        'WEB', r'\[PRiVATE\]', 'HEVC', 'x265', 'PRT-xpost', '-xpost', '480p', '2160p', 'SD',
+        'HD', '\'', '&', ' rq'
+    ]
     clean_name = re.sub(r'\.', ' ', file_name)  # replace periods
     for word in scrubbedWords:  # delete scrubbedWords
         clean_name = re.sub(word, '', clean_name, 0, re.IGNORECASE)
@@ -107,12 +109,10 @@ class stash_interface:
         return
 
     def jwtAuth(self):
-        response = requests.post(self.server + "/login", data={'username': self.username, 'password': self.password},
-                                 verify=not self.ignore_ssl_warnings)
+        response = requests.post(self.server + "/login", data={'username': self.username, 'password': self.password}, verify=not self.ignore_ssl_warnings)
         self.auth_token = response.cookies.get('session', None)
         if not self.auth_token:
-            logging.error("Error authenticating with Stash.  Double check your IP, Port, Username, and Password",
-                          exc_info=self.debug_mode)
+            logging.error("Error authenticating with Stash.  Double check your IP, Port, Username, and Password", exc_info=self.debug_mode)
             sys.exit()
 
     # GraphQL Functions
@@ -129,14 +129,11 @@ class stash_interface:
 
         try:
             if self.http_auth_type == "basic":
-                response = requests.post(graphql_server, json=json, headers=self.headers,
-                                         auth=(self.username, self.password), verify=not self.ignore_ssl_warnings)
+                response = requests.post(graphql_server, json=json, headers=self.headers, auth=(self.username, self.password), verify=not self.ignore_ssl_warnings)
             elif self.http_auth_type == "jwt":
-                response = requests.post(graphql_server, json=json, headers=self.headers,
-                                         cookies={'session': self.auth_token}, verify=not self.ignore_ssl_warnings)
+                response = requests.post(graphql_server, json=json, headers=self.headers, cookies={'session': self.auth_token}, verify=not self.ignore_ssl_warnings)
             else:
-                response = requests.post(graphql_server, json=json, headers=self.headers,
-                                         verify=not self.ignore_ssl_warnings)
+                response = requests.post(graphql_server, json=json, headers=self.headers, verify=not self.ignore_ssl_warnings)
 
             if response.status_code == 200:
                 result = response.json()
@@ -149,12 +146,10 @@ class stash_interface:
                 self.jwtAuth()
                 return self.__callGraphQL(query, variables, False)
             else:
-                logging.error("GraphQL query failed to run by returning code of {}. Query: {}.  Variables: {}".format(
-                    response.status_code, query, variables), exc_info=self.debug_mode)
+                logging.error("GraphQL query failed to run by returning code of {}. Query: {}.  Variables: {}".format(response.status_code, query, variables), exc_info=self.debug_mode)
                 raise Exception("GraphQL error")
         except requests.exceptions.SSLError:
-            proceed = input(
-                "Caught certificate error trying to talk to Stash. Add ignore_ssl_warnings=True to your configuration.py to ignore permanently. Ignore for now? (yes/no):")
+            proceed = input("Caught certificate error trying to talk to Stash. Add ignore_ssl_warnings=True to your configuration.py to ignore permanently. Ignore for now? (yes/no):")
             if proceed == 'y' or proceed == 'Y' or proceed == 'Yes' or proceed == 'yes':
                 self.ignore_ssl_warnings = True
                 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -166,8 +161,7 @@ class stash_interface:
     def waitForIdle(self):
         jobQueue = self.getQueue()
         if jobQueue:  # Check that the queue is empty
-            print("Stash is busy.  Retrying in 10 seconds.  Status:" + jobQueue[0][
-                'description'] + "; Progress:" + '{:.0%}'.format(jobQueue[0].get('progress', 'N/A')))
+            print("Stash is busy.  Retrying in 10 seconds.  Status:" + jobQueue[0]['description'] + "; Progress:" + '{:.0%}'.format(jobQueue[0].get('progress', 'N/A')))
             time.sleep(10)
             self.waitForIdle()
 
@@ -258,15 +252,12 @@ class stash_interface:
     }
     """
         result = self.callGraphQL(query)
-        self.version_buildtime = datetime.strptime(result["data"]["version"]["build_time"], '%Y-%m-%d %H:%M:%S')
-        if self.version_buildtime < stash_interface.min_buildtime:
-            logging.error(
-                "Your Stash version appears too low to use this script.  Please upgrade to the latest \"development\" build and try again.",
-                exc_info=self.debug_mode)
+        version_buildtime = datetime.strptime(result["data"]["version"]["build_time"], '%Y-%m-%d %H:%M:%S')
+        if version_buildtime < stash_interface.min_buildtime:
+            logging.error("Your Stash version appears too low to use this script.  Please upgrade to the latest \"development\" build and try again.", exc_info=self.debug_mode)
             sys.exit()
 
     def populatePerformers(self):
-        stashPerformers = []
         query = """
     {
         allPerformers
@@ -282,13 +273,11 @@ class stash_interface:
         stashPerformers = result["data"]["allPerformers"]
         for performer in stashPerformers:
             if isinstance(performer['aliases'], str):
-                performer['aliases'] = [alias.strip() for alias in
-                                        performer['aliases'].split(',')]  # Convert comma delimited string to list
+                performer['aliases'] = [alias.strip() for alias in performer['aliases'].split(',')]  # Convert comma delimited string to list
 
         self.performers = stashPerformers
 
     def populateStudios(self):
-        stashStudios = []
         query = """
     {
         allStudios
@@ -301,10 +290,10 @@ class stash_interface:
     }
     """
         result = self.callGraphQL(query)
-        self.studios = result["data"]["allStudios"]
+        stashStudios = result["data"]["allStudios"]
+        self.studios = stashStudios
 
     def populateTags(self):
-        stashTags = []
         query = """
     {
         allTags
@@ -316,7 +305,8 @@ class stash_interface:
     }
     """
         result = self.callGraphQL(query)
-        self.tags = result["data"]["allTags"]
+        stashTags = result["data"]["allTags"]
+        self.tags = stashTags
 
     def findScenes(self, **kwargs):
         stashScenes = []
@@ -340,12 +330,10 @@ class stash_interface:
             variables['filter']['per_page'] = variables['filter'].get('per_page', 100)
 
         # Build our query string (e.g., "findScenes(filter:FindFilterType!){" )
-        query_string = "query(" + ", ".join(
-            ":".join(("$" + str(k), accepted_variables[k])) for k, v in variables.items()) + '){'
+        query_string = "query(" + ", ".join(":".join(("$" + str(k), accepted_variables[k])) for k, v in variables.items()) + '){'
 
         # Build our findScenes string
-        findScenes_string = "findScenes(" + ", ".join(
-            ":".join((str(k), "$" + str(k))) for k, v in variables.items()) + '){'
+        findScenes_string = "findScenes(" + ", ".join(":".join((str(k), "$" + str(k))) for k, v in variables.items()) + '){'
 
         try:
             query = query_string + findScenes_string + """
@@ -397,8 +385,7 @@ class stash_interface:
                 max_scenes = result["data"]["findScenes"]["count"]
             total_pages = math.ceil(max_scenes / variables['filter']['per_page'])
             print("Getting Stash Scenes Page: " + str(variables['filter']['page']) + " of " + str(total_pages))
-            if (variables['filter']['page'] < total_pages and len(
-                    stashScenes) < max_scenes):  # If we're not at the last page or max_scenes, recurse with page +1
+            if variables['filter']['page'] < total_pages and len(stashScenes) < max_scenes:  # If we're not at the last page or max_scenes, recurse with page +1
                 variables['filter']['page'] = variables['filter']['page'] + 1
                 stashScenes = stashScenes + self.findScenes(**variables)
 
@@ -438,7 +425,6 @@ class stash_interface:
             result = self.callGraphQL(query, variables)
             self.populatePerformers()
             return result["data"]["performerCreate"]["id"]
-
         except:
             logging.error("Error in adding performer", exc_info=self.debug_mode)
             logging.error(variables)
@@ -446,16 +432,11 @@ class stash_interface:
 
     def getPerformerImage(self, url):  # UNTESTED
         if self.http_auth_type == "basic":
-            return base64.b64encode(
-                requests.get(url, proxies=self.proxies, auth=HTTPBasicAuth(self.username, self.password),
-                             verify=not self.ignore_ssl_warnings).content)
+            return base64.b64encode(requests.get(url, proxies=self.proxies, auth=HTTPBasicAuth(self.username, self.password), verify=not self.ignore_ssl_warnings).content)
         elif self.http_auth_type == "jwt":
-            return base64.b64encode(
-                requests.get(url, proxies=self.proxies, headers=self.headers, cookies={'session': self.auth_token},
-                             verify=not self.ignore_ssl_warnings).content)
+            return base64.b64encode(requests.get(url, proxies=self.proxies, headers=self.headers, cookies={'session': self.auth_token}, verify=not self.ignore_ssl_warnings).content)
         else:
-            return base64.b64encode(
-                requests.get(url, proxies=self.proxies, verify=not self.ignore_ssl_warnings).content)
+            return base64.b64encode(requests.get(url, proxies=self.proxies, verify=not self.ignore_ssl_warnings).content)
 
     def addStudio(self, studio_data):
         query = """
@@ -471,7 +452,7 @@ class stash_interface:
             result = self.callGraphQL(query, variables)
             self.populateStudios()
             return result["data"]["studioCreate"]["id"]
-        except Exception as e:
+        except:
             logging.error("Error in adding studio:", exc_info=self.debug_mode)
             logging.error(variables)
 
@@ -489,7 +470,7 @@ class stash_interface:
             result = self.callGraphQL(query, variables)
             self.populateTags()
             return result["data"]["tagCreate"]["id"]
-        except Exception as e:
+        except:
             logging.error("Error in adding tags", exc_info=self.debug_mode)
             logging.error(variables)
 
@@ -519,7 +500,7 @@ class stash_interface:
             result = self.callGraphQL(query, variables)
             self.populateTags()
             return result["data"]["tagDestroy"]
-        except Exception as e:
+        except:
             logging.error("Error in deleting tag", exc_info=self.debug_mode)
             logging.error(variables)
 
@@ -537,7 +518,7 @@ class stash_interface:
             result = self.callGraphQL(query, variables)
             self.populateTags()
             return result["data"]["performerDestroy"]
-        except Exception as e:
+        except:
             logging.error("Error in deleting performer", exc_info=self.debug_mode)
             logging.error(variables)
 
@@ -555,7 +536,7 @@ class stash_interface:
             result = self.callGraphQL(query, variables)
             self.populateTags()
             return result["data"]["sceneDestroy"]
-        except Exception as e:
+        except:
             logging.error("Error in deleting scene", exc_info=self.debug_mode)
             logging.error(variables)
 
@@ -598,17 +579,16 @@ class stash_interface:
                 variables = {'scraped_performer': result['data']['scrapePerformerList'][0]}
                 result = self.callGraphQL(query, variables)
                 if keyIsSet(result['data'], ['scrapePerformer', 'aliases']):
-                    result["data"]["scrapePerformer"]['aliases'] = [alias.strip() for alias in
-                                                                    result["data"]["scrapePerformer"]['aliases'].split(
-                                                                        ',')]
+                    result["data"]["scrapePerformer"]['aliases'] = [alias.strip() for alias in result["data"]["scrapePerformer"]['aliases'].split(',')]
                 return result["data"]["scrapePerformer"]
             else:
                 return None
-        except Exception as e:
+        except:
             logging.error("Error in scraping Freeones", exc_info=self.debug_mode)
             logging.error(variables)
 
     def __getPerformerByName(self, name, check_aliases=False):  # A private function that allows disabling of checking for aliases
+
         for performer in self.performers:
             if performer['name'].lower() == name:  # Check input name against performer name
                 return performer
@@ -622,7 +602,7 @@ class stash_interface:
         input_aliases_lower = listToLower(aliases)
 
         result = self.__getPerformerByName(name, True)
-        if result:  # This matches input name with existing name or alias 
+        if result:  # This matches input name with existing name or alias
             return result
 
         for input_alias in input_aliases_lower:  # For each alias, recurse w/ name = alias, but disable alias to alias mapping
@@ -642,14 +622,12 @@ class stash_interface:
         logging.debug("Getting tag id for tag \'" + name + "\'.")
         search_name = name.lower().replace('-', ' ').replace('(', '').replace(')', '').strip().replace(' ', '')
         for tag in self.tags:
-            if search_name == tag['name'].lower().replace('-', ' ').replace('(', '').replace(')', '').strip().replace(
-                    ' ', ''):
+            if search_name == tag['name'].lower().replace('-', ' ').replace('(', '').replace(')', '').strip().replace(' ', ''):
                 logging.debug("Found the tag.  ID is " + tag['id'])
                 return tag
             else:
                 for alias in tag['aliases']:
-                    if search_name == alias.lower().replace('-', ' ').replace('(', '').replace(')', '').strip().replace(
-                            ' ', ''):
+                    if search_name == alias.lower().replace('-', ' ').replace('(', '').replace(')', '').strip().replace(' ', ''):
                         logging.debug("Found the tag.  ID is " + tag['id'])
                         return tag
 
@@ -662,7 +640,8 @@ class stash_interface:
 
         return None
 
-    def createSceneUpdateData(self, scene_data):  # Scene data returned from stash has a different format than what is accepted by the UpdateScene graphQL query.  This converts one format to another
+    @staticmethod
+    def createSceneUpdateData(scene_data):  # Scene data returned from stash has a different format than what is accepted by the UpdateScene graphQL query.  This converts one format to another
         scene_update_data = {}
         if keyIsSet(scene_data, "id"):
             scene_update_data["id"] = scene_data["id"]
@@ -722,8 +701,7 @@ class config_class:
                 if key[0:2] == "__":
                     continue
                 if (key == "server_ip" or key == "server_port") and ("<" in value or ">" in value):
-                    logging.warning(
-                        "Please remove '<' and '>' from your server_ip and server_port lines in configuration.py")
+                    logging.warning("Please remove '<' and '>' from your server_ip and server_port lines in configuration.py")
                     sys.exit()
                 if isinstance(value, type(vars(config_class).get(key, None))):
                     vars(self)[key] = value
@@ -736,17 +714,16 @@ class config_class:
             else:
                 logging.error("No configuration found.  Exiting.")
                 sys.exit()
-        except NameError as err:
-            logging.error("Invalid configuration.py.  Make sure you use 'True' and 'False' (capitalized)",
-                          exc_info=config_class.debug_mode)
+        except NameError:
+            logging.error("Invalid configuration.py.  Make sure you use 'True' and 'False' (capitalized)", exc_info=config_class.debug_mode)
             sys.exit()
 
     def createConfig(self):
         self.server_ip = input("What's your Stash server's IP address? (no port please):")
         self.server_port = input("What's your Stash server's port?:")
-        https_input = input("Does your Stash server use HTTPS? (yes/no):")
+        https_input = input("Does your Stash server use HTTPS? (yes/no):").lower()
         self.use_https = False
-        if https_input == 'y' or https_input == 'Y' or https_input == 'Yes' or https_input == 'yes':
+        if https_input == 'y' or https_input == 'yes':
             self.use_https = True
         self.username = input("What's your Stash server's username? (Just press enter if you don't use one):")
         self.password = input("What's your Stash server's username? (Just press enter if you don't use one):")
@@ -763,8 +740,7 @@ ignore_ssl_warnings= True # Set to True if your Stash uses SSL w/ a self-signed 
 "
 """.format(self.server_ip, self.server_port, self.username, self.password, self.use_https))
         f.close()
-        print(
-            "Configuration file created.  All values are currently at defaults.  It is highly recommended that you edit the configuration.py to your liking.  Otherwise, just re-run the script to use the defaults.")
+        print("Configuration file created.  All values are currently at defaults.  It is highly recommended that you edit the configuration.py to your liking.  Otherwise, just re-run the script to use the defaults.")
         sys.exit()
 
 
@@ -860,7 +836,7 @@ def main(args):
             my_stash.waitForIdle()
         print("Success! Finished.")
 
-    except Exception as e:
+    except:
         logging.error("""Something went wrong.  Have you:
         • Checked to make sure you're running the "development" branch of Stash, not "latest"?
         • Checked that you can connect to Stash at the same IP and port listed in your configuration.py?
