@@ -53,7 +53,7 @@ def lreplace(pattern, sub, string):
 
 
 def scrubFileName(file_name):
-    scrubbedWords = ['MP4-(.+?)$', ' XXX ', '1080p', '720p', 'WMV-(.+?)$', '-UNKNOWN', ' x264-(.+?)$', 'DVDRip', 'WEBRIP', 'WEB', '\[PRiVATE\]', 'HEVC', 'x265', 'PRT-xpost', '-xpost', '480p', '2160p', 'SD', 'HD', '\'', '&', ' rq']
+    scrubbedWords = ['MP4-(.+?)$', ' XXX ', '1080p', '720p', 'WMV-(.+?)$', '-UNKNOWN', ' x264-(.+?)$', 'DVDRip', 'WEBRIP', '[-\._ ]WEB[-\._ ]', '\[PRiVATE\]', 'HEVC', 'x265', 'PRT-xpost', '-xpost', '480p', '2160p', '[-\._ ]SD[-\._ ]', '[-\._ ]HD[-\._ ]', '\'', '&', ' rq']
     clean_name = ""
     clean_name = re.sub('\.', ' ', file_name)  ##replace periods
     for word in scrubbedWords:  ##delete scrubbedWords
@@ -428,7 +428,23 @@ def scrapeScene(scene):
         if not scraped_data:
             scraped_data = sceneQuery(scrape_query, False)
         if not scraped_data:
+            filename = re.search(r'.*/(.*?)\.[mp4|wmv|mkv|avi|flv]', scene['path'])
+            if filename:
+                filename = filename.group(1)
+                scene['path'] = scene['path'].replace(filename, scrubFileName(filename))
             if config.fail_no_date:
+                if re.search(r'[\.\_\-\ ](\d{2}[\.\_\-\ ]\d{2}[\.\_\-\ ]\d{2})[\.\_\-\ ]', scene['path']):
+                    scene['path'] = re.sub(r'[\.\_\-\ ]\d{2}[\.\_\-\ ]\d{2}[\.\_\-\ ]\d{2}[\.\_\-\ ]',r' ',scene['path'])
+                    scene['path'] = scene['path'].replace("  "," ")
+                    print("No data found, Retrying without date for: [{}]".format(scrape_query))
+                    scrapeScene(scene)
+                    return None
+                if re.search(r'[\.\_\-\ ](\d{4}[\.\_\-\ ]\d{2}[\.\_\-\ ]\d{2})[\.\_\-\ ]', scene['path']):
+                    scene['path'] = re.sub(r'[\.\_\-\ ]\d{4}[\.\_\-\ ]\d{2}[\.\_\-\ ]\d{2}[\.\_\-\ ]',r' ',scene['path'])
+                    scene['path'] = scene['path'].replace("  "," ")
+                    print("No data found, Retrying without date for: [{}]".format(scrape_query))
+                    scrapeScene(scene)
+                    return None
                 if re.search(r'[ -\(\_\.]([012][0-9])|(31)[ -\(\_\.]?(0[1-9])|(1[0-2])[ -\(\_\.]?((19)|(20))?\d{2}[ -\(\_\.]', scene['path']) or re.search(r'[ -\(\_\.]((19)|(20))?\d{2}[ -\(\_\.]?(0[1-9])|(1[0-2])[ -\(\_\.]?([012][0-9])|(31)[ -\(\_\.]', scene['path']):
                     scene['path'] = re.sub(r'[ -\(\_\.]([012][0-9])|(31)[ -\(\_\.]?(0[1-9])|(1[0-2])[ -\(\_\.]?((19)|(20))?\d{2}[ -\(\_\.]',r' ',scene['path'])
                     scene['path'] = re.sub(r'[ -\(\_\.]((19)|(20))?\d{2}[ -\(\_\.]?(0[1-9])|(1[0-2])[ -\(\_\.]?([012][0-9])|(31)[ -\(\_\.]',r' ',scene['path'])
@@ -779,12 +795,12 @@ class config_class:
     verify_aliases_only = False  # Set to True to scrape only scenes that were skipped due to unconfirmed aliases - set confirm_questionable_aliases to True before using
     rescrape_scenes = False  # If False, script will not rescrape scenes previously scraped successfully.  Must set scrape_tag for this to work
     retry_unmatched = False  # If False, script will not rescrape scenes previously unmatched.  Must set unmatched_tag for this to work
-    background_size = 'full' # Which size get from API, available options: full, large, medium, small
+    background_size = 'full'  # Which size get from API, available options: full, large, medium, small
     debug_mode = False
-    scrape_organized = False # If False, script will not scrape scenes set as Organized
-    scrape_stash_id = False # If False, script will not scrape scenes that have a stash_id
+    scrape_organized = False  # If False, script will not scrape scenes set as Organized
+    scrape_stash_id = False  # If False, script will not scrape scenes that have a stash_id
 
-    #Set what fields we scrape
+    # Set what fields we scrape
     set_details = True
     set_date = True
     set_cover_image = True
@@ -794,40 +810,40 @@ class config_class:
     set_title = True
     set_url = True
 
-    #ThePornDB API Key
+    # ThePornDB API Key
     tpdb_api_key = "" # Add your API Key here eg tbdb_api_key = "myactualapikey"
 
-    #Set what content we add to Stash, if found in ThePornDB but not in Stash
+    # Set what content we add to Stash, if found in ThePornDB but not in Stash
     add_studio = True
     add_tags = False  # Script will still add scrape_tag and ambiguous_tag, if set.  Will also tag ambiguous performers if set to True.
     add_performers = True
 
-    #Disambiguation options
-    #The script tries to disambiguate using title, studio, and date (or just filename if parse_with_filename is True).  If this combo still returns more than one result, these options are used.  Set both to False to skip scenes with ambiguous results
-    auto_disambiguate = False  #Set to True to try to pick the top result from ThePornDB automatically.  Will not set ambiguous_tag
-    manual_disambiguate = False  #Set to True to prompt for a selection.  (Overwritten by auto_disambiguate)
-    ambiguous_tag = "ThePornDB Ambiguous"  #Tag to be added to scenes we skip due to ambiguous scraping.  Set to None to disable
+    # Disambiguation options
+    # The script tries to disambiguate using title, studio, and date (or just filename if parse_with_filename is True).  If this combo still returns more than one result, these options are used.  Set both to False to skip scenes with ambiguous results
+    auto_disambiguate = False  # Set to True to try to pick the top result from ThePornDB automatically.  Will not set ambiguous_tag
+    manual_disambiguate = False  # Set to True to prompt for a selection.  (Overwritten by auto_disambiguate)
+    ambiguous_tag = "ThePornDB Ambiguous"  # Tag to be added to scenes we skip due to ambiguous scraping.  Set to None to disable
     #Disambiguation options for when a specific performer can't be verified
     tag_ambiguous_performers = True  # If True, will tag ambiguous performers (performers listed on ThePornDB only for a single site, not across sites)
-    confirm_questionable_aliases = True  #If True, when TPBD lists an alias that we can't verify, manually prompt for config.  Otherwise they are tagged for later reprocessing
-    trust_tpbd_aliases = True  #If True, when TPBD lists an alias that we can't verify, just trust TBPD to be correct.  May lead to incorrect tagging
+    confirm_questionable_aliases = True  # If True, when TPBD lists an alias that we can't verify, manually prompt for config.  Otherwise they are tagged for later reprocessing
+    trust_tpbd_aliases = True  # If True, when TPBD lists an alias that we can't verify, just trust TBPD to be correct.  May lead to incorrect tagging
 
-    #Other config options
+    # Other config options
     parse_with_filename = True  # If True, will query ThePornDB based on file name, rather than title, studio, and date
     dirs_in_query = 0  # The number of directories up the path to be included in the query for a filename parse query.  For example, if the file  is at \performer\mysite\video.mp4 and dirs_in_query is 1, query would be "mysite video."  If set to two, query would be "performer mysite video", etc.
-    only_add_female_performers = True  #If True, only female performers are added (note, exception is made if performer name is already in title and name is found on ThePornDB)
-    scrape_performers_freeones = True  #If True, will try to scrape newly added performers with the freeones scraper
-    get_images_babepedia = True  #If True, will try to grab an image from babepedia before the one from ThePornDB
-    include_performers_in_title = True  #If True, performers will be added at the beggining of the title
+    only_add_female_performers = True  # If True, only female performers are added (note, exception is made if performer name is already in title and name is found on ThePornDB)
+    scrape_performers_freeones = True  # If True, will try to scrape newly added performers with the freeones scraper
+    get_images_babepedia = True  # If True, will try to grab an image from babepedia before the one from ThePornDB
+    include_performers_in_title = True  # If True, performers will be added at the beggining of the title
     male_performers_in_title = False  # If True, male performers and included in the title
-    clean_filename = True  #If True, will try to clean up filenames before attempting scrape. Often unnecessary, as ThePornDB already does this
+    clean_filename = True  # If True, will try to clean up filenames before attempting scrape. Often unnecessary, as ThePornDB already does this
     compact_studio_names = True  # If True, this will remove spaces from studio names added from ThePornDB
-    fail_no_date = False #If True, on a failed scrape the system will attempt to remove the date from the query and try a re-scrape
+    fail_no_date = False # If True, on a failed scrape the system will attempt to remove the date from the query and try a re-scrape
     remove_search_tag = False # If True, this will remove tags that are used for manual scraping on a successful scrape.  BE VERY CAREFUL WITH THIS FLAG!
     proxies = {}  # Leave empty or specify proxy like this: {'http':'http://user:pass@10.10.10.10:8000','https':'https://user:pass@10.10.10.10:8000'}
     path_include = False  # filepath to scrape.  This is pointing to path in the already existing Stash database entry, and isn't an import process
 
-    #use_oshash = False # Set to True to use oshash values to query NOT YET SUPPORTED
+    # use_oshash = False # Set to True to use oshash values to query NOT YET SUPPORTED
 
     def loadConfig(self):
         try:  # Try to load configuration.py values
@@ -1083,7 +1099,7 @@ def parseArgs(args):
     return parsed_args.query
 
 
-#Globals
+# Globals
 tpbd_error_count = 0
 my_stash = None
 ENCODING = 'utf-8'
@@ -1145,20 +1161,20 @@ def main(args):
         findScenes_params['scene_filter'] = {}
         if max_scenes != 0: findScenes_params['max_scenes'] = max_scenes
         if config.path_include:
-            findScenes_params['scene_filter']['path'] = { 'modifier': 'INCLUDES','value': config.path_include }
+            findScenes_params['scene_filter']['path'] = {'modifier': 'INCLUDES','value': config.path_include}
 
-        if config.disambiguate_only:  #If only disambiguating scenes
+        if config.disambiguate_only:  # If only disambiguating scenes
             required_tags.append(config.ambiguous_tag)
-        if config.verify_aliases_only:  #If only disambiguating aliases
+        if config.verify_aliases_only:  # If only disambiguating aliases
             required_tags.append(config.unconfirmed_alias)
-        if not config.retry_unmatched:  #If not retrying unmatched scenes
+        if not config.retry_unmatched:  # If not retrying unmatched scenes
             excluded_tags.append(config.unmatched_tag)
-        if not config.rescrape_scenes:  #If only scraping unscraped scenes
+        if not config.rescrape_scenes:  # If only scraping unscraped scenes
             excluded_tags.append(config.scrape_tag)
 
-        my_stash.waitForIdle()  #Wait for Stash to idle before scraping
+        my_stash.waitForIdle()  # Wait for Stash to idle before scraping
 
-        #Set our filter to require any required_tags
+        # Set our filter to require any required_tags
         if len(required_tags) > 0:
             findScenes_params_incl = copy.deepcopy(findScenes_params)
             required_tag_ids = []
@@ -1168,16 +1184,16 @@ def main(args):
                     required_tag_ids.append(tag["id"])
                 else:
                     logging.error("Did not find tag in Stash: " + tag_name, exc_info=config.debug_mode)
-            findScenes_params_incl['scene_filter']['tags'] = { 'modifier': 'INCLUDES','value': [*required_tag_ids] }
-            if (not config.scrape_stash_id): # include only scenes without stash_id
-                findScenes_params_incl['scene_filter']['stash_id'] = { 'modifier': 'IS_NULL', 'value': 'none' }
-            if (not config.scrape_organized): # include only scenes that are not organized
+            findScenes_params_incl['scene_filter']['tags'] = {'modifier': 'INCLUDES', 'value': [*required_tag_ids]}
+            if (not config.scrape_stash_id):  # include only scenes without stash_id
+                findScenes_params_incl['scene_filter']['stash_id'] = {'modifier': 'IS_NULL', 'value': 'none'}
+            if (not config.scrape_organized):  # include only scenes that are not organized
                 findScenes_params_incl['scene_filter']['organized'] = False
             if len(excluded_tags) > 0:
                 print("Getting Scenes With Required Tags")
             scenes_with_tags = my_stash.findScenes(**findScenes_params_incl)
             scenes = scenes_with_tags
-        #Set our filter to exclude any excluded_tags
+        # Set our filter to exclude any excluded_tags
         if len(excluded_tags) > 0:
             findScenes_params_excl = copy.deepcopy(findScenes_params)
             excluded_tag_ids = []
@@ -1187,10 +1203,10 @@ def main(args):
                     excluded_tag_ids.append(tag["id"])
                 else:
                     logging.error("Did not find tag in Stash: " + tag_name, exc_info=config.debug_mode)
-            findScenes_params_excl['scene_filter']['tags'] = { 'modifier': 'EXCLUDES', 'value': [*excluded_tag_ids] }
-            if (not config.scrape_stash_id): # include only scenes without stash_id
-                findScenes_params_excl['scene_filter']['stash_id'] = { 'modifier': 'IS_NULL', 'value': 'none' }
-            if (not config.scrape_organized): # include only scenes that are not organized
+            findScenes_params_excl['scene_filter']['tags'] = {'modifier': 'EXCLUDES', 'value': [*excluded_tag_ids]}
+            if (not config.scrape_stash_id):  # include only scenes without stash_id
+                findScenes_params_excl['scene_filter']['stash_id'] = {'modifier': 'IS_NULL', 'value': 'none'}
+            if (not config.scrape_organized):  # include only scenes that are not organized
                 findScenes_params_excl['scene_filter']['organized'] = False
 
             if len(required_tags) > 0:
@@ -1199,16 +1215,16 @@ def main(args):
             scenes = scenes_without_tags
 
         if len(excluded_tags) == 0 and len(
-                required_tags) == 0:  #If no tags are required or excluded
+                required_tags) == 0:  # If no tags are required or excluded
             findScenes_params_filtered = copy.deepcopy(findScenes_params)
-            if (not config.scrape_stash_id): # include only scenes without stash_id
-                findScenes_params_filtered['scene_filter']['stash_id'] = { 'modifier': 'IS_NULL', 'value': 'none' }
-            if (not config.scrape_organized): # include only scenes that are not organized
+            if (not config.scrape_stash_id):  # include only scenes without stash_id
+                findScenes_params_filtered['scene_filter']['stash_id'] = {'modifier': 'IS_NULL', 'value': 'none'}
+            if (not config.scrape_organized):  # include only scenes that are not organized
                 findScenes_params_filtered['scene_filter']['organized'] = False
             scenes = my_stash.findScenes(**findScenes_params_filtered)
 
         if len(required_tags) > 0 and len(excluded_tags) > 0:
-            scenes = [ scene for scene in scenes_with_tags if scene in scenes_without_tags]  #Scenes that exist in both
+            scenes = [scene for scene in scenes_with_tags if scene in scenes_without_tags]  # Scenes that exist in both
         if (not config.scrape_organized):
             print("Skipped Organized scenes")
         if (not config.scrape_stash_id):
