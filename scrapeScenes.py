@@ -53,7 +53,7 @@ def lreplace(pattern, sub, string):
 
 
 def scrubFileName(file_name):
-    scrubbedWords = ['MP4-(.+?)$', ' XXX ', '1080p', '720p', 'WMV-(.+?)$', '-UNKNOWN', ' x264-(.+?)$', 'DVDRip', 'WEBRIP', '[-\._ ]WEB[-\._ ]', '\[PRiVATE\]', 'HEVC', 'x265', 'PRT-xpost', '-xpost', '480p', '2160p', '[-\._ ]SD[-\._ ]', '[-\._ ]HD[-\._ ]', '\'', '&', ' rq']
+    scrubbedWords = ['MP4-(.+?)$', ' XXX ', '1080p', '720p', 'WMV-(.+?)$', '-UNKNOWN', ' x264-(.+?)$', 'DVDRip', 'WEBRIP', '[-\._ ]WEB[-\._ ]', '\[PRiVATE\]', 'HEVC', 'x265', 'PRT-xpost', '-xpost', '480p', '2160p', '[-\._ ]SD[-\._ ]', '[-\._ ]HD[-\._ ]', '\'', '&', ' rq', 'SD$', 'HD$']
     clean_name = ""
     clean_name = re.sub('\.', ' ', file_name)  ##replace periods
     for word in scrubbedWords:  ##delete scrubbedWords
@@ -423,7 +423,7 @@ def scrapeScene(scene):
         #if config.use_oshash and scene['oshash']:
         #    scraped_data = sceneHashQuery(scene['oshash'])
         if not scraped_data:
-            scrape_query = getQuery(scene)
+            scrape_query = scrubFileName(getQuery(scene))
             scraped_data = sceneQuery(scrape_query)
         if not scraped_data:
             scraped_data = sceneQuery(scrape_query, False)
