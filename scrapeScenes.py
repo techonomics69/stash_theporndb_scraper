@@ -428,7 +428,7 @@ def scrapeScene(scene):
         if not scraped_data:
             scraped_data = sceneQuery(scrape_query, False)
         if not scraped_data:
-            filename = re.search(r'.*/(.*?)\.[mp4|wmv|mkv|avi|flv]', scene['path'])
+            filename = re.search(r'.*/(.*?)\.[mp4|wmv|mkv|avi|flv|mov|avchd|mpg|mpeg]', scene['path'].lower())
             if filename:
                 filename = filename.group(1)
                 scene['path'] = scene['path'].replace(filename, scrubFileName(filename))
