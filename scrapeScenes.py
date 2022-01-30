@@ -49,12 +49,11 @@ def lreplace(pattern, sub, string):
 
 
 def scrubFileName(file_name):
-    scrubbedWords = [
-        'MP4-(.+?)$', ' XXX ', '1080p', '720p', 'WMV-(.+?)$', '-UNKNOWN', ' x264-(.+?)$', 'DVDRip', 'WEBRIP',
-        'WEB', r'\[PRiVATE\]', 'HEVC', 'x265', 'PRT-xpost', '-xpost', '480p', '2160p', 'SD',
-        'HD', '\'', '&', ' rq'
+    scrubbedWords = ['MP4-(.+?)$', ' XXX ', '1080p', '720p', 'WMV-(.+?)$', '-UNKNOWN', ' x264-(.+?)$', 'DVDRip',
+         'WEBRIP', '[-\._ ]WEB[-\._ ]', '\[PRiVATE\]', 'HEVC', 'x265', 'PRT-xpost', '-xpost', '480p', '2160p',
+         '[-\._ ]SD[-\._ ]', '[-\._ ]HD[-\._ ]', '\'', '&', ' rq', 'SD$', 'HD$'
     ]
-    clean_name = re.sub(r'\.', ' ', file_name)  # replace periods
+    clean_name = re.sub('\.', ' ', file_name)  # replace periods
     for word in scrubbedWords:  # delete scrubbedWords
         clean_name = re.sub(word, '', clean_name, 0, re.IGNORECASE)
     # add support for custom name cleaning
@@ -407,16 +406,32 @@ def scrapeScene(scene):
         # if config.use_oshash and scene['oshash']:
         #    scraped_data = sceneHashQuery(scene['oshash'])
         if not scraped_data:
-            scrape_query = getQuery(scene)
+            scrape_query = scrubFileName(getQuery(scene))
             scraped_data = sceneQuery(scrape_query)
         if not scraped_data:
             scraped_data = sceneQuery(scrape_query, False)
         if not scraped_data:
+            filename = re.search(r'.*/(.*?)\.[mp4|wmv|mkv|avi|flv|mov|avchd|mpg|mpeg]', scene['path'].lower())
+            if filename:
+                filename = filename.group(1)
+                scene['path'] = scene['path'].replace(filename, scrubFileName(filename))
             if config.fail_no_date:
-                if re.search(r'[ -(_.]([012][0-9])|(31)[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?((19)|(20))?\d{2}[ -(_.]', scene['path']) or re.search(r'[ -(_.]((19)|(20))?\d{2}[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?([012][0-9])|(31)[ -(_.]', scene['path']):
-                    scene['path'] = re.sub(r'[ -(_.]([012][0-9])|(31)[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?((19)|(20))?\d{2}[ -(_.]', r' ', scene['path'])
-                    scene['path'] = re.sub(r'[ -(_.]((19)|(20))?\d{2}[ -(_.]?(0[1-9])|(1[0-2])[ -(_.]?([012][0-9])|(31)[ -(_.]', r' ', scene['path'])
-                    scene['path'] = scene['path'].replace("  ", " ")
+                if re.search(r'[._\- ](\d{2}[._\- ]\d{2}[._\- ]\d{2})[._\- ]', scene['path']):
+                    scene['path'] = re.sub(r'[._\- ]\d{2}[._\- ]\d{2}[._\- ]\d{2}[._\- ]',r' ',scene['path'])
+                    scene['path'] = scene['path'].replace("  "," ")
+                    print("No data found, Retrying without date for: [{}]".format(scrape_query))
+                    scrapeScene(scene)
+                    return None
+                if re.search(r'[._\- ](\d{4}[._\- ]\d{2}[._\- ]\d{2})[._\- ]', scene['path']):
+                    scene['path'] = re.sub(r'[._\- ]\d{4}[._\- ]\d{2}[._\- ]\d{2}[._\- ]',r' ',scene['path'])
+                    scene['path'] = scene['path'].replace("  "," ")
+                    print("No data found, Retrying without date for: [{}]".format(scrape_query))
+                    scrapeScene(scene)
+                    return None
+                if re.search(r'[ \-(_.]([012][0-9])|(31)[ \-(_.]?(0[1-9])|(1[0-2])[ \-(_.]?((19)|(20))?\d{2}[ \-(_.]', scene['path']) or re.search(r'[ \-(_.]((19)|(20))?\d{2}[ \-(_.]?(0[1-9])|(1[0-2])[ \-(_.]?([012][0-9])|(31)[ \-(_.]', scene['path']):
+                    scene['path'] = re.sub(r'[ \-(_.]([012][0-9])|(31)[ \-(_.]?(0[1-9])|(1[0-2])[ \-(_.]?((19)|(20))?\d{2}[ \-(_.]',r' ',scene['path'])
+                    scene['path'] = re.sub(r'[ \-(_.]((19)|(20))?\d{2}[ \-(_.]?(0[1-9])|(1[0-2])[ \-(_.]?([012][0-9])|(31)[ \-(_.]',r' ',scene['path'])
+                    scene['path'] = scene['path'].replace("  "," ")
                     print("No data found, Retrying without date for: [{}]".format(scrape_query))
                     scrapeScene(scene)
                     return None
