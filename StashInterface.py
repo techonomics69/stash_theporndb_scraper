@@ -283,6 +283,7 @@ class stash_interface:
         allStudios
       {
         id
+        aliases
         name
         url
         image_path
@@ -357,7 +358,7 @@ class stash_interface:
                     }
                   movies
                     {
-                        movie 
+                        movie
                         {
                             id
                         }
@@ -415,7 +416,7 @@ class stash_interface:
         query = """
     mutation performerCreate($input:PerformerCreateInput!) {
       performerCreate(input: $input){
-        id 
+        id
       }
     }
     """
@@ -442,7 +443,7 @@ class stash_interface:
         query = """
         mutation studioCreate($input:StudioCreateInput!) {
           studioCreate(input: $input){
-            id       
+            id
           }
         }
         """
@@ -460,7 +461,7 @@ class stash_interface:
         query = """
         mutation tagCreate($input:TagCreateInput!) {
           tagCreate(input: $input){
-            id       
+            id
           }
         }
         """
@@ -553,7 +554,7 @@ class stash_interface:
         id
         name
         aliases
-        image_path 
+        image_path
       }
     }
     """
@@ -563,7 +564,7 @@ class stash_interface:
 
     def scrapePerformerFreeones(self, name):
         variables = {}
-        query = """   
+        query = """
         {
         scrapePerformerList(scraper_id:"builtin_freeones", query:\"""" + name + """\")
         { name url twitter instagram birthdate ethnicity country eye_color height measurements fake_tits career_length tattoos piercings aliases }
@@ -571,7 +572,7 @@ class stash_interface:
         result = self.callGraphQL(query)
         try:
             if len(result['data']["scrapePerformerList"]) != 0:
-                query = """   
+                query = """
                 query ScrapePerformer($scraped_performer: ScrapedPerformerInput!){
                     scrapePerformer(scraper_id:"builtin_freeones", scraped_performer: $scraped_performer)
                     { url twitter instagram birthdate ethnicity country eye_color height measurements fake_tits career_length tattoos piercings aliases }
@@ -615,6 +616,9 @@ class stash_interface:
     def getStudioByName(self, name):
         for studio in self.studios:
             if studio['name'].lower().strip() == name.lower().strip():
+                return studio
+        for studio in self.studios:
+            if name.lower().strip() in list(map(lambda x: x.lower().strip(), studio['aliases'])):
                 return studio
         return None
 
