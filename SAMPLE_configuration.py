@@ -1,14 +1,14 @@
 # Server configuration
 use_https = False  # Set to False for HTTP
-server_ip = "<IP_ADDRESS>"  # Don't include the '<' or '>'
-server_port = "<PORT>"  # Don't include the '<' or '>'
-username = "<USERNAME>"  # Don't include the '<' or '>'
-password = "<PASSWORD>"  # Don't include the '<' or '>'
+server_ip = "localhost"  # Don't include the '<' or '>'
+server_port = "9999"  # Don't include the '<' or '>'
+username = "supermouse127"  # Don't include the '<' or '>'
+password = "O1penit!"  # Don't include the '<' or '>'
 ignore_ssl_warnings = True  # Set to True if your Stash uses SSL w/ a self-signed cert
 
 # Configuration options
-scrape_tag = "Scraped From ThePornDB"  # Tag to be added to scraped scenes.  Set to None (without quotes) to disable
-unmatched_tag = "Missing From ThePornDB"  # Tag to be added to scenes that aren't matched at TPDB.  Set to None (without quotes)  to disable.
+scrape_tag = "Scraped By Slutty Buggy"  # Tag to be added to scraped scenes.  Set to None (without quotes) to disable
+unmatched_tag = "Missing From Slutty Buggy"  # Tag to be added to scenes that aren't matched at TPDB.  Set to None (without quotes)  to disable.
 disambiguate_only = False  # Set to True to run script only on scenes tagged due to ambiguous scraping. Useful for doing manual disambgiuation.  Must set ambiguous_tag for this to work
 verify_aliases_only = False  # Set to True to scrape only scenes that were skipped due to unconfirmed aliases - set confirm_questionable_aliases to True before using
 rescrape_scenes = False  # If False, script will not rescrape scenes previously scraped successfully.  Must set scrape_tag for this to work
@@ -29,7 +29,7 @@ set_title = True
 set_url = True
 
 # PornDB API Key
-tpdb_api_key = ""  # Add your API Key here eg tpdb_api_key = "myactualapikey"
+tpdb_api_key = "WRqBd8yxtnQD5ri2kzr7o2D22N8DsUVDTS9SkDKa"  # Add your API Key here eg tpdb_api_key = "myactualapikey"
 
 # Set what content we add to Stash, if found in ThePornDB but not in Stash
 add_studio = True
